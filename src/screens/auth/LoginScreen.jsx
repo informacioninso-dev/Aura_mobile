@@ -1,0 +1,101 @@
+import { useEffect, useState } from 'react'
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native'
+import { useAuth } from '../../context/AuthContext'
+import { getApiErrorMessage } from '../../api/errors'
+import { useBiometrics } from '../../hooks/useBiometrics'
+import { registrarNotificaciones } from '../../hooks/useNotifications'
+
+export default function LoginScreen() {
+  const { login } = useAuth()
+  const { disponible, habilitado, tipo, autenticar } = useBiometrics()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (disponible && habilitado) intentarBiometria()
+  }, [disponible, habilitado])
+
+  async function intentarBiometria() {
+    const ok = await autenticar()
+    if (ok) {
+      // La auth context intentará cargar el user con el token guardado
+      // Si no hay token, simplemente no hace nada
+    }
+  }
+
+  async function handleLogin() {
+    if (!email || !password) return
+    setLoading(true); setError('')
+    try {
+      await login(email.trim().toLowerCase(), password)
+      await registrarNotificaciones()
+    } catch (e) {
+      setError(getApiErrorMessage(e, 'Email o contraseña incorrectos.'))
+    } finally { setLoading(false) }
+  }
+
+  return (
+    <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={s.card}>
+        <View style={s.logoWrap}>
+          <View style={s.logoCircle}>
+            <Text style={s.logoSymbol}>✦</Text>
+          </View>
+          <Text style={s.logo}>AURA</Text>
+        </View>
+        <Text style={s.subtitle}>Tu asistente financiero</Text>
+
+        {error ? <Text style={s.error}>{error}</Text> : null}
+
+        <TextInput
+          style={s.input}
+          placeholder="Email"
+          placeholderTextColor="rgba(255,255,255,0.35)"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          value={email}
+          onChangeText={setEmail}
+        />
+        <TextInput
+          style={s.input}
+          placeholder="Contraseña"
+          placeholderTextColor="rgba(255,255,255,0.35)"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          onSubmitEditing={handleLogin}
+        />
+
+        <TouchableOpacity style={s.btn} onPress={handleLogin} disabled={loading}>
+          {loading
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={s.btnText}>Ingresar</Text>}
+        </TouchableOpacity>
+
+        {disponible && habilitado && (
+          <TouchableOpacity style={s.bioBtn} onPress={intentarBiometria}>
+            <Text style={s.bioBtnText}>{tipo === 'Face ID' ? '😊' : '🔒'} Entrar con {tipo}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </KeyboardAvoidingView>
+  )
+}
+
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#0F172A', justifyContent: 'center', padding: 24 },
+  card: { gap: 12 },
+  logoWrap: { alignItems: 'center', marginBottom: 8 },
+  logoCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(196,135,246,0.15)', borderWidth: 1, borderColor: 'rgba(196,135,246,0.3)', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  logoSymbol: { color: '#C487F6', fontSize: 28 },
+  logo: { color: '#C487F6', fontSize: 32, fontWeight: '800', letterSpacing: 6 },
+  subtitle: { color: 'rgba(255,255,255,0.35)', fontSize: 14, textAlign: 'center', marginBottom: 8 },
+  input: { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 12, padding: 14, color: '#fff', fontSize: 15 },
+  btn: { backgroundColor: '#8B5CF6', borderRadius: 12, padding: 15, alignItems: 'center', marginTop: 4 },
+  btnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  bioBtn: { borderWidth: 1, borderColor: 'rgba(196,135,246,0.3)', borderRadius: 12, padding: 13, alignItems: 'center', backgroundColor: 'rgba(196,135,246,0.08)' },
+  bioBtnText: { color: '#C487F6', fontWeight: '600', fontSize: 14 },
+  error: { color: '#F87171', fontSize: 13, textAlign: 'center' },
+})

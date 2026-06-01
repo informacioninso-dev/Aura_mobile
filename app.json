@@ -1,0 +1,55 @@
+{
+  "expo": {
+    "name": "Aura",
+    "slug": "aura-finanzas",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "aura",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.binnso.aura",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Aura necesita el micrófono para el asistente de voz.",
+        "NSFaceIDUsageDescription": "Aura usa Face ID para proteger tu información financiera."
+      }
+    },
+    "android": {
+      "package": "com.binnso.aura",
+      "adaptiveIcon": {
+        "backgroundColor": "#0F172A",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "RECORD_AUDIO",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker",
+      "expo-splash-screen",
+      "expo-local-authentication",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#C487F6"
+        }
+      ]
+    ],
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F172A"
+    }
+  }
+}
