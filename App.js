@@ -1,22 +1,32 @@
 import { useEffect } from 'react'
 import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
-import { AuthProvider } from './src/context/AuthContext'
+import { AuthProvider, useAuth } from './src/context/AuthContext'
 import AppNavigator from './src/navigation/AppNavigator'
 
-SplashScreen.preventAutoHideAsync()
+SplashScreen.preventAutoHideAsync().catch(() => {})
 
-export default function App() {
+function AppContent() {
+  const { loading } = useAuth()
+
   useEffect(() => {
-    // Oculta el splash después de que el navigator esté listo
-    const timer = setTimeout(() => SplashScreen.hideAsync(), 500)
-    return () => clearTimeout(timer)
-  }, [])
+    if (!loading) {
+      SplashScreen.hideAsync().catch(() => {})
+    }
+  }, [loading])
 
   return (
-    <AuthProvider>
+    <>
       <StatusBar style="light" />
       <AppNavigator />
+    </>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
     </AuthProvider>
   )
 }

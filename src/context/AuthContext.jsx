@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import api from '../api/client'
-import { setTokens, clearTokens, getAccess } from '../api/authStorage'
+import { setTokens, clearTokens, getAccess, getRefresh } from '../api/authStorage'
 
 const AuthContext = createContext(null)
 
@@ -10,33 +10,71 @@ export function AuthProvider({ children }) {
 
   async function fetchMe() {
     try {
-      const { data } = await api.get('/usuarios/me/')
+      const { data } = await api.get('/usuarios/perfil/')
       setUser(data)
+      return data
     } catch {
       setUser(null)
+      return null
     }
   }
 
+  async function restoreSession() {
+    const [access, refresh] = await Promise.all([getAccess(), getRefresh()])
+    if (!access && !refresh) {
+      setUser(null)
+      return false
+    }
+
+    const data = await fetchMe()
+    if (!data) {
+      await clearTokens()
+      return false
+    }
+
+    return true
+  }
+
   useEffect(() => {
-    getAccess().then((token) => {
-      if (token) fetchMe().finally(() => setLoading(false))
-      else setLoading(false)
-    })
+    let mounted = true
+
+    async function bootstrap() {
+      try {
+        await restoreSession()
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+
+    bootstrap()
+
+    return () => {
+      mounted = false
+    }
   }, [])
 
   async function login(email, password) {
-    const { data } = await api.post('/usuarios/token/', { email, password })
-    await setTokens(data.access, data.refresh)
+    const { data } = await api.post('/usuarios/login/', { email, password })
+    await setTokens(data.access, data.refresh || '')
     await fetchMe()
   }
 
   async function logout() {
-    await clearTokens()
-    setUser(null)
+    try {
+      const refresh = await getRefresh()
+      if (refresh) {
+        await api.post('/usuarios/logout/', { refresh })
+      }
+    } catch {
+      // Even if the API logout fails, local session must be cleared.
+    } finally {
+      await clearTokens()
+      setUser(null)
+    }
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, restoreSession, fetchMe }}>
       {children}
     </AuthContext.Provider>
   )

@@ -5,7 +5,6 @@ import {
 } from 'react-native'
 import { Audio } from 'expo-av'
 import api from '../../api/client'
-import { formatMoney } from '../../utils/formatters'
 import { getApiErrorMessage } from '../../api/errors'
 
 const TIPO_LABELS = { ingreso_fijo: 'Ingreso fijo', ingreso_puntual: 'Ingreso puntual', gasto_fijo: 'Gasto fijo', gasto_puntual: 'Gasto puntual' }
@@ -46,16 +45,38 @@ export default function AsistenteScreen() {
     }
   }, [grabando])
 
+  useEffect(() => () => {
+    if (recordingRef.current) {
+      recordingRef.current.stopAndUnloadAsync().catch(() => {})
+      recordingRef.current = null
+    }
+  }, [])
+
   const campo = (key) => edits[key] !== undefined ? edits[key] : parsed?.[key]
   const setEditar = (key, val) => setEdits((e) => ({ ...e, [key]: val }))
 
-  function resetear() { setTexto(''); setParsed(null); setEdits({}); setError(''); setExito(false) }
+  function resetear() {
+    setTexto('')
+    setParsed(null)
+    setEdits({})
+    setError('')
+    setExito(false)
+    setGrabando(false)
+    setTranscribiendo(false)
+    setCargando(false)
+    setGuardando(false)
+  }
 
   async function iniciarGrabacion() {
     setError('')
     try {
-      const { granted } = await Audio.requestPermissionsAsync()
-      if (!granted) { setError('Se necesita permiso de micrófono.'); return }
+      const { status, canAskAgain } = await Audio.requestPermissionsAsync()
+      if (status !== 'granted') {
+        setError(canAskAgain
+          ? 'Permiso de micrófono denegado. Intentá de nuevo.'
+          : 'Habilitá el micrófono en Configuración → Expo Go → Micrófono.')
+        return
+      }
 
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true })
 
@@ -106,7 +127,11 @@ export default function AsistenteScreen() {
       await api.post(ENDPOINT_MAP[merged.tipo], buildPayload(merged))
       setExito(true)
       setTimeout(resetear, 1600)
-    } catch (e) { setError(getApiErrorMessage(e, 'No se pudo guardar.')); setGuardando(false) }
+    } catch (e) {
+      setError(getApiErrorMessage(e, 'No se pudo guardar.'))
+    } finally {
+      setGuardando(false)
+    }
   }
 
   const esGasto = parsed?.tipo?.startsWith('gasto')
