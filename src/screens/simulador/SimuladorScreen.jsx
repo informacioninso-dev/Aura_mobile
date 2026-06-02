@@ -1,10 +1,36 @@
 import { useEffect, useState } from 'react'
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TextInput, TouchableOpacity, Dimensions } from 'react-native'
-import { LineChart } from 'react-native-chart-kit'
+import Svg, { Polyline, Line, Text as SvgText } from 'react-native-svg'
 import api from '../../api/client'
 import { formatMoney } from '../../utils/formatters'
 
 const SCREEN_W = Dimensions.get('window').width
+const CW = SCREEN_W - 64
+const CH = 140
+
+function SvgChart({ values, labels, positive }) {
+  const color = positive ? '#10B981' : '#F87171'
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const range = max - min || 1
+  const getX = (i) => 8 + (i / (values.length - 1)) * (CW - 16)
+  const getY = (v) => 10 + (1 - (v - min) / range) * (CH - 38)
+  const points = values.map((v, i) => `${getX(i)},${getY(v)}`).join(' ')
+  const step = Math.max(1, Math.floor(labels.length / 5))
+
+  return (
+    <Svg width={CW} height={CH}>
+      {min < 0 && max > 0 && (
+        <Line x1={8} y1={getY(0)} x2={CW - 8} y2={getY(0)} stroke="rgba(248,113,113,0.3)" strokeWidth="1" strokeDasharray="4,3" />
+      )}
+      <Polyline points={points} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+      {labels.filter((_, i) => i % step === 0 || i === labels.length - 1).map((lbl, i) => {
+        const idx = i * step >= labels.length ? labels.length - 1 : i * step
+        return <SvgText key={idx} x={getX(idx)} y={CH - 4} fontSize="9" fill="rgba(255,255,255,0.35)" textAnchor="middle">{lbl}</SvgText>
+      })}
+    </Svg>
+  )
+}
 
 export default function SimuladorScreen() {
   const [proyeccion, setProyeccion] = useState(null)
@@ -103,28 +129,7 @@ export default function SimuladorScreen() {
           {values.length > 1 && (
             <View style={s.chartCard}>
               <Text style={s.chartTitle}>Evolución del saldo</Text>
-              <LineChart
-                data={{ labels, datasets: [{ data: values, strokeWidth: 2 }] }}
-                width={SCREEN_W - 64}
-                height={160}
-                withDots={false}
-                withInnerLines={false}
-                withOuterLines={false}
-                withVerticalLines={false}
-                yAxisLabel="$"
-                chartConfig={{
-                  backgroundColor: 'transparent',
-                  backgroundGradientFrom: '#0F1B35',
-                  backgroundGradientTo: '#0F1B35',
-                  decimalPlaces: 0,
-                  color: (opacity = 1) => finalPositivo ? `rgba(16,185,129,${opacity})` : `rgba(248,113,113,${opacity})`,
-                  labelColor: () => 'rgba(255,255,255,0.35)',
-                  propsForBackgroundLines: { stroke: 'rgba(255,255,255,0.06)' },
-                  propsForLabels: { fontSize: 9 },
-                }}
-                bezier
-                style={{ borderRadius: 12, marginLeft: -8 }}
-              />
+              <SvgChart values={values} labels={labels} positive={finalPositivo} />
             </View>
           )}
         </>
