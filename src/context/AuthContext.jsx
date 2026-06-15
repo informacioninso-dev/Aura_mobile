@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import api from '../api/client'
 import { setTokens, clearTokens, getAccess, getRefresh } from '../api/authStorage'
+import { setMoneyCurrency } from '../utils/formatters'
 
 const AuthContext = createContext(null)
 
@@ -12,9 +13,11 @@ export function AuthProvider({ children }) {
     try {
       const { data } = await api.get('/usuarios/perfil/')
       setUser(data)
+      setMoneyCurrency(data?.moneda_preferida)
       return data
     } catch {
       setUser(null)
+      setMoneyCurrency('USD')
       return null
     }
   }
@@ -70,6 +73,7 @@ export function AuthProvider({ children }) {
     } finally {
       await clearTokens()
       setUser(null)
+      setMoneyCurrency('USD')
     }
   }
 

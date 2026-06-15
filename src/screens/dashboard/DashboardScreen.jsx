@@ -651,7 +651,12 @@ export default function DashboardScreen({ navigation }) {
         <Text style={s.projectionCopy}>
           {projectionWindowCopy}
         </Text>
-        <ProjectionChart data={projection} loading={loading} showHeader={false} />
+        <ProjectionChart
+          data={projection}
+          loading={loading}
+          showHeader={false}
+          advancedProjectionEnabled={advancedProjectionEnabled}
+        />
       </View>
 
       <TouchableOpacity style={s.logoutBtn} onPress={logout}>

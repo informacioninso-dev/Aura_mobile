@@ -2,6 +2,7 @@ import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { ActivityIndicator, Text, View, TouchableOpacity, StyleSheet, ScrollView, Platform } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuth } from '../context/AuthContext'
 
 import LoginScreen from '../screens/auth/LoginScreen'
@@ -105,6 +106,8 @@ function TabIcon({ name, focused }) {
 }
 
 function MainTabs() {
+  const insets = useSafeAreaInsets()
+  const baseHeight = Platform.OS === 'ios' ? 84 : 60
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -112,7 +115,7 @@ function MainTabs() {
         tabBarStyle: {
           backgroundColor: '#0F172A',
           borderTopColor: 'rgba(196,135,246,0.15)',
-          height: Platform.OS === 'ios' ? 84 : 60,
+          height: baseHeight + insets.bottom,
         },
         tabBarActiveTintColor: '#C487F6',
         tabBarInactiveTintColor: 'rgba(255,255,255,0.35)',

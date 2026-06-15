@@ -1,22 +1,57 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native'
-import Svg, { Circle, Line, Polyline, Text as SvgText } from 'react-native-svg'
+import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg'
 
 import api from '../../api/client'
-import { formatMoney } from '../../utils/formatters'
+import { formatMoney, formatMoneyAxis } from '../../utils/formatters'
 
-const H = 176
-const PL = 10
+const H = 180
+const PL = 46
 const PR = 10
-const PT = 12
-const PB = 32
+const PT = 16
+const PB = 28
 const MIN_WIDTH = 260
 const POINT_SPACING = 48
+
+const ING_COLOR = '#10B981'
+const GASTO_COLOR = '#F87171'
+
+const range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => start + i)
+
+// Curva suave (Catmull-Rom -> Bezier), similar al type="monotone" del grafico web.
+function smoothLinePath(points) {
+  if (points.length < 2) return ''
+  if (points.length === 2) {
+    return `M${points[0][0]},${points[0][1]} L${points[1][0]},${points[1][1]}`
+  }
+  let d = `M${points[0][0]},${points[0][1]}`
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i === 0 ? i : i - 1]
+    const p1 = points[i]
+    const p2 = points[i + 1]
+    const p3 = points[i + 2 < points.length ? i + 2 : i + 1]
+    const cp1x = p1[0] + (p2[0] - p0[0]) / 6
+    const cp1y = p1[1] + (p2[1] - p0[1]) / 6
+    const cp2x = p2[0] - (p3[0] - p1[0]) / 6
+    const cp2y = p2[1] - (p3[1] - p1[1]) / 6
+    d += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2[0]},${p2[1]}`
+  }
+  return d
+}
+
+function smoothAreaPath(points, baseY) {
+  if (points.length < 2) return ''
+  const top = smoothLinePath(points)
+  const last = points[points.length - 1]
+  const first = points[0]
+  return `${top} L${last[0]},${baseY} L${first[0]},${baseY} Z`
+}
 
 export default function ProjectionChart({
   data: externalData,
   loading: externalLoading = false,
   showHeader = true,
+  advancedProjectionEnabled = false,
 }) {
   const [internalData, setInternalData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -65,50 +100,67 @@ export default function ProjectionChart({
   }
 
   const series = data.series
-  const values = series.map((point) => Number(point.closing_balance) || 0)
   const currentIdx = series.findIndex((point) => point.is_current)
   const lastRealIdx = series.reduce((acc, point, index) => (point.is_real ? index : acc), -1)
-  const projectedSeries = series.filter((point) => !point.is_real)
-  const lastProj = projectedSeries.length ? projectedSeries[projectedSeries.length - 1] : null
 
-  const min = Math.min(...values)
-  const max = Math.max(...values)
-  const baseRange = max - min
-  const padding = baseRange === 0 ? Math.max(Math.abs(max) * 0.1, 100) : baseRange * 0.12
-  const minValue = min - padding
-  const maxValue = max + padding
-  const range = maxValue - minValue || 1
-  const chartWidth = Math.max(viewportWidth, PL + PR + (Math.max(series.length - 1, 1) * POINT_SPACING))
+  // Total disponible este mes: en Pro arrastra el saldo anterior (bola de nieve), en Free es solo el ingreso del mes.
+  const chartSeries = series.map((point) => {
+    const opening = Number(point.opening_balance ?? 0)
+    const ingMes = Number(point.monthly_ingresos ?? 0)
+    const gastoMes = Number(point.monthly_gastos ?? 0)
+    return {
+      label: point.label,
+      ingValue: advancedProjectionEnabled ? opening + ingMes : ingMes,
+      gastoMes,
+    }
+  })
+
+  const realIndices = lastRealIdx >= 0 ? range(0, Math.min(lastRealIdx + 1, chartSeries.length - 1)) : []
+  const projIndices = lastRealIdx >= 0
+    ? range(lastRealIdx, chartSeries.length - 1)
+    : range(0, chartSeries.length - 1)
+
+  const allValues = chartSeries.flatMap((point) => [point.ingValue, point.gastoMes])
+  const maxValue = Math.max(...allValues, 0)
+  const minValue = Math.min(...allValues, 0)
+  const padding = Math.max((maxValue - minValue) * 0.1, maxValue * 0.05, 50)
+  const topValue = maxValue + padding
+  const bottomValue = Math.min(minValue, 0)
+  const valueRange = topValue - bottomValue || 1
+
+  const chartWidth = Math.max(viewportWidth, PL + PR + (Math.max(chartSeries.length - 1, 1) * POINT_SPACING))
   const canScroll = chartWidth > viewportWidth + 8
 
-  const getX = (index) => PL + (index / Math.max(series.length - 1, 1)) * (chartWidth - PL - PR)
-  const getY = (value) => PT + (1 - ((value - minValue) / range)) * (H - PT - PB)
+  const getX = (index) => PL + (index / Math.max(chartSeries.length - 1, 1)) * (chartWidth - PL - PR)
+  const getY = (value) => PT + (1 - ((value - bottomValue) / valueRange)) * (H - PT - PB)
+  const baseY = getY(0)
 
-  const realPoints = lastRealIdx >= 0
-    ? series
-      .slice(0, lastRealIdx + 2)
-      .map((point, index) => `${getX(index)},${getY(Number(point.closing_balance) || 0)}`)
-      .join(' ')
-    : ''
+  const buildSeries = (indices, key) => {
+    if (indices.length < 2) return null
+    const points = indices.map((index) => [getX(index), getY(Number(chartSeries[index][key]) || 0)])
+    return {
+      line: smoothLinePath(points),
+      area: smoothAreaPath(points, baseY),
+    }
+  }
 
-  const projectionStartIndex = lastRealIdx >= 0 ? lastRealIdx : 0
-  const projPoints = series
-    .slice(projectionStartIndex)
-    .map((point, index) => `${getX(projectionStartIndex + index)},${getY(Number(point.closing_balance) || 0)}`)
-    .join(' ')
+  const ingReal = buildSeries(realIndices, 'ingValue')
+  const ingProj = buildSeries(projIndices, 'ingValue')
+  const gastoReal = buildSeries(realIndices, 'gastoMes')
+  const gastoProj = buildSeries(projIndices, 'gastoMes')
 
-  const labelStep = Math.max(1, Math.ceil(series.length / 6))
-  const labelIndices = series
+  const labelStep = Math.max(1, Math.ceil(chartSeries.length / 6))
+  const labelIndices = chartSeries
     .map((_, index) => index)
     .filter((index) => (
       index === 0
-      || index === series.length - 1
+      || index === chartSeries.length - 1
       || index === currentIdx
       || index % labelStep === 0
     ))
 
-  const allPositive = values.every((value) => value >= 0)
-  const color = allPositive ? '#10B981' : '#F87171'
+  const yAxisValues = [topValue, (topValue + bottomValue) / 2, bottomValue]
+
   const containerStyle = showHeader ? s.root : s.embeddedRoot
 
   return (
@@ -122,51 +174,50 @@ export default function ProjectionChart({
     >
       {showHeader ? (
         <View style={s.header}>
-          <Text style={s.title}>Proyeccion de saldo</Text>
-          {lastProj ? (
-            <Text style={[s.final, { color: Number(lastProj.closing_balance) >= 0 ? '#10B981' : '#F87171' }]}>
-              {formatMoney(lastProj.closing_balance)}
-            </Text>
-          ) : null}
+          <Text style={s.title}>Proyeccion mensual</Text>
         </View>
       ) : null}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chartScroll}>
         <Svg width={chartWidth} height={H}>
-          {minValue < 0 && maxValue > 0 ? (
-            <Line
-              x1={PL}
-              y1={getY(0)}
-              x2={chartWidth - PR}
-              y2={getY(0)}
-              stroke="rgba(248,113,113,0.28)"
-              strokeWidth="1"
-              strokeDasharray="4,3"
-            />
+          {yAxisValues.map((value, index) => {
+            const y = getY(value)
+            return (
+              <Fragment key={index}>
+                <Line x1={PL} y1={y} x2={chartWidth - PR} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+                <SvgText x={4} y={y + 3} fontSize="8" fill="rgba(255,255,255,0.35)" textAnchor="start">
+                  {formatMoneyAxis(value)}
+                </SvgText>
+              </Fragment>
+            )
+          })}
+
+          {ingReal ? (
+            <>
+              <Path d={ingReal.area} fill={ING_COLOR} fillOpacity={0.2} stroke="none" />
+              <Path d={ingReal.line} fill="none" stroke={ING_COLOR} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+            </>
           ) : null}
 
-          {projPoints.split(' ').filter(Boolean).length >= 2 ? (
-            <Polyline
-              points={projPoints}
-              fill="none"
-              stroke={color}
-              strokeWidth="2"
-              strokeDasharray="6 4"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              opacity="0.6"
-            />
+          {ingProj ? (
+            <>
+              <Path d={ingProj.area} fill={ING_COLOR} fillOpacity={0.08} stroke="none" />
+              <Path d={ingProj.line} fill="none" stroke={ING_COLOR} strokeWidth="2" strokeDasharray="6 4" strokeLinejoin="round" strokeLinecap="round" opacity={0.6} />
+            </>
           ) : null}
 
-          {realPoints.split(' ').filter(Boolean).length >= 2 ? (
-            <Polyline
-              points={realPoints}
-              fill="none"
-              stroke={color}
-              strokeWidth="2.5"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
+          {gastoReal ? (
+            <>
+              <Path d={gastoReal.area} fill={GASTO_COLOR} fillOpacity={0.2} stroke="none" />
+              <Path d={gastoReal.line} fill="none" stroke={GASTO_COLOR} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+            </>
+          ) : null}
+
+          {gastoProj ? (
+            <>
+              <Path d={gastoProj.area} fill={GASTO_COLOR} fillOpacity={0.08} stroke="none" />
+              <Path d={gastoProj.line} fill="none" stroke={GASTO_COLOR} strokeWidth="2" strokeDasharray="6 4" strokeLinejoin="round" strokeLinecap="round" opacity={0.6} />
+            </>
           ) : null}
 
           {currentIdx >= 0 ? (
@@ -182,13 +233,15 @@ export default function ProjectionChart({
               />
               <SvgText
                 x={getX(currentIdx)}
-                y={PT - 2}
+                y={PT - 4}
                 fontSize="8"
                 fill="rgba(255,255,255,0.45)"
                 textAnchor="middle"
               >
                 Hoy
               </SvgText>
+              <Circle cx={getX(currentIdx)} cy={getY(chartSeries[currentIdx].ingValue)} r="4" fill={ING_COLOR} />
+              <Circle cx={getX(currentIdx)} cy={getY(chartSeries[currentIdx].gastoMes)} r="4" fill={GASTO_COLOR} />
             </>
           ) : null}
 
@@ -201,34 +254,29 @@ export default function ProjectionChart({
               fill="rgba(255,255,255,0.35)"
               textAnchor="middle"
             >
-              {series[index].label?.split(' ')[0]?.slice(0, 3) || ''}
+              {chartSeries[index].label?.split(' ')[0]?.slice(0, 3) || ''}
             </SvgText>
           ))}
-
-          {currentIdx >= 0 ? (
-            <Circle
-              cx={getX(currentIdx)}
-              cy={getY(values[currentIdx])}
-              r="4"
-              fill={color}
-            />
-          ) : null}
         </Svg>
       </ScrollView>
 
       <View style={s.legend}>
         <View style={s.legendItem}>
-          <View style={[s.dot, { backgroundColor: color }]} />
-          <Text style={s.legendText}>Real</Text>
+          <View style={[s.dot, { backgroundColor: ING_COLOR }]} />
+          <Text style={s.legendText}>Ingresos</Text>
         </View>
         <View style={s.legendItem}>
-          <View style={[s.dot, { backgroundColor: color, opacity: 0.5 }]} />
-          <Text style={s.legendText}>Proyectado</Text>
+          <View style={[s.dot, { backgroundColor: GASTO_COLOR }]} />
+          <Text style={s.legendText}>Gastos</Text>
         </View>
-        {currentIdx >= 0 ? (
-          <Text style={s.hoy}>Hoy: {formatMoney(values[currentIdx])}</Text>
-        ) : null}
+        <Text style={s.legendHint}>Linea solida: real · punteada: proyectado</Text>
       </View>
+
+      {currentIdx >= 0 ? (
+        <Text style={s.hoy}>
+          Hoy: {formatMoney(chartSeries[currentIdx].ingValue)} ingresos · {formatMoney(chartSeries[currentIdx].gastoMes)} gastos
+        </Text>
+      ) : null}
 
       {canScroll ? (
         <Text style={s.scrollHint}>Desliza la grafica para ver mas meses.</Text>
@@ -277,10 +325,6 @@ const s = StyleSheet.create({
     fontWeight: '700',
     fontSize: 15,
   },
-  final: {
-    fontWeight: '700',
-    fontSize: 14,
-  },
   chartScroll: {
     paddingBottom: 4,
   },
@@ -289,6 +333,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     marginTop: 6,
+    flexWrap: 'wrap',
   },
   legendItem: {
     flexDirection: 'row',
@@ -304,10 +349,15 @@ const s = StyleSheet.create({
     color: 'rgba(255,255,255,0.4)',
     fontSize: 12,
   },
-  hoy: {
+  legendHint: {
     color: 'rgba(255,255,255,0.3)',
     fontSize: 11,
     marginLeft: 'auto',
+  },
+  hoy: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 12,
+    marginTop: 4,
   },
   scrollHint: {
     color: 'rgba(255,255,255,0.3)',
