@@ -28,7 +28,9 @@
         "USE_BIOMETRIC",
         "USE_FINGERPRINT",
         "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE"
+        "VIBRATE",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
       ]
     },
     "web": {
@@ -50,6 +52,12 @@
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#0F172A"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "54212b82-1c06-4a29-8beb-eb2ae292c199"
+      }
+    },
+    "owner": "binnso"
   }
 }
