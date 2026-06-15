@@ -5,7 +5,7 @@ import api from '../../api/client'
 import { getApiErrorMessage } from '../../api/errors'
 import { useBiometrics } from '../../hooks/useBiometrics'
 
-export default function PerfilScreen() {
+export default function PerfilScreen({ navigation }) {
   const { user, logout } = useAuth()
   const { disponible, habilitado, tipo, toggleHabilitado } = useBiometrics()
   const [seccion, setSeccion] = useState(null)
@@ -28,7 +28,7 @@ export default function PerfilScreen() {
     finally { setLoading(false) }
   }
 
-  const plan = user?.plan_name || 'Gratuito'
+  const plan = user?.plan?.name || 'Gratuito'
   const planColor = plan.toLowerCase().includes('pro') ? '#C487F6' : 'rgba(255,255,255,0.4)'
 
   return (
@@ -76,7 +76,7 @@ export default function PerfilScreen() {
           </View>
         )}
 
-        <MenuItem icon="⭐" label="Ver planes" onPress={() => Alert.alert('Planes', 'Visitá aura.binnso.com para gestionar tu plan.')} />
+        <MenuItem icon="⭐" label="Ver planes" onPress={() => navigation.navigate('Planes')} />
         <MenuItem icon="📊" label="Modo de proyección" onPress={() => Alert.alert('Proyección', `Modo actual: ${user?.projection_mode || 'automática'}`)} />
       </View>
 

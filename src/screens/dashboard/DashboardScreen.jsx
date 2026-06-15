@@ -12,20 +12,11 @@ import {
 import { useAuth } from '../../context/AuthContext'
 import api from '../../api/client'
 import { formatMoney, formatDate } from '../../utils/formatters'
+import { montoEfectivoMes } from '../../utils/frecuencias'
 import ProjectionChart from '../../components/ui/ProjectionChart'
 import { getApiErrorMessage } from '../../api/errors'
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-const FREQ = {
-  diario: 30,
-  semanal: 4.33,
-  quincenal: 2,
-  mensual: 1,
-  bimestral: 0.5,
-  trimestral: 0.333,
-  semestral: 0.167,
-  anual: 0.083,
-}
 
 const EMPTY_MOVEMENTS = {
   ingresos: [],
@@ -86,10 +77,6 @@ function occursInMonth(item, monthDate, dateField = 'fecha') {
   return targetDate >= monthStart && targetDate <= monthEnd
 }
 
-function mensualizado(monto, frecuencia) {
-  return Number(monto || 0) * (FREQ[frecuencia] || 1)
-}
-
 function getFrequencyLabel(value) {
   const labels = {
     diario: 'Diario',
@@ -104,7 +91,7 @@ function getFrequencyLabel(value) {
   return labels[value] || 'Mensual'
 }
 
-export default function DashboardScreen() {
+export default function DashboardScreen({ navigation }) {
   const { user, logout } = useAuth()
   const currentMonth = useMemo(() => startOfMonth(new Date()), [])
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)
@@ -305,7 +292,7 @@ export default function DashboardScreen() {
         id: `income-fixed-${item.id}`,
         label: item.descripcion,
         meta: `${getFrequencyLabel(item.frecuencia)} · impacto mensual`,
-        amount: mensualizado(item.monto, item.frecuencia),
+        amount: montoEfectivoMes(item.monto, item.frecuencia, item.fecha_inicio, selectedMonth.getFullYear(), selectedMonth.getMonth() + 1),
       })),
       ...punctualIncomesThisMonth.map((item) => ({
         id: `income-punctual-${item.id}`,
@@ -314,7 +301,7 @@ export default function DashboardScreen() {
         amount: Number(item.monto || 0),
       })),
     ].sort((a, b) => b.amount - a.amount)
-  }, [fixedIncomesThisMonth, punctualIncomesThisMonth])
+  }, [fixedIncomesThisMonth, punctualIncomesThisMonth, selectedMonth])
 
   const expenseDetailItems = useMemo(() => {
     return [
@@ -322,7 +309,7 @@ export default function DashboardScreen() {
         id: `expense-fixed-${item.id}`,
         label: item.descripcion,
         meta: `${item.categoria || 'Sin categoría'} · ${getFrequencyLabel(item.frecuencia)}`,
-        amount: mensualizado(item.monto, item.frecuencia),
+        amount: montoEfectivoMes(item.monto, item.frecuencia, item.fecha_inicio, selectedMonth.getFullYear(), selectedMonth.getMonth() + 1),
       })),
       ...installmentsThisMonth.map((item) => ({
         id: `expense-installment-${item.id}`,
@@ -337,7 +324,7 @@ export default function DashboardScreen() {
         amount: Number(item.monto || 0),
       })),
     ].sort((a, b) => b.amount - a.amount)
-  }, [fixedExpensesThisMonth, installmentsThisMonth, punctualExpensesThisMonth])
+  }, [fixedExpensesThisMonth, installmentsThisMonth, punctualExpensesThisMonth, selectedMonth])
 
   const movementCount = (
     movements.ingresos.length
@@ -348,16 +335,16 @@ export default function DashboardScreen() {
   )
 
   const fixedIncomeTotal = useMemo(
-    () => fixedIncomesThisMonth.reduce((sum, item) => sum + mensualizado(item.monto, item.frecuencia), 0),
-    [fixedIncomesThisMonth],
+    () => fixedIncomesThisMonth.reduce((sum, item) => sum + montoEfectivoMes(item.monto, item.frecuencia, item.fecha_inicio, selectedMonth.getFullYear(), selectedMonth.getMonth() + 1), 0),
+    [fixedIncomesThisMonth, selectedMonth],
   )
   const punctualIncomeTotal = useMemo(
     () => punctualIncomesThisMonth.reduce((sum, item) => sum + Number(item.monto || 0), 0),
     [punctualIncomesThisMonth],
   )
   const fixedExpenseTotal = useMemo(
-    () => fixedExpensesThisMonth.reduce((sum, item) => sum + mensualizado(item.monto, item.frecuencia), 0),
-    [fixedExpensesThisMonth],
+    () => fixedExpensesThisMonth.reduce((sum, item) => sum + montoEfectivoMes(item.monto, item.frecuencia, item.fecha_inicio, selectedMonth.getFullYear(), selectedMonth.getMonth() + 1), 0),
+    [fixedExpensesThisMonth, selectedMonth],
   )
   const installmentTotal = useMemo(
     () => installmentsThisMonth.reduce((sum, item) => sum + Number(item.cuota_mensual || 0), 0),
@@ -465,6 +452,18 @@ export default function DashboardScreen() {
           <Text style={s.monthNavArrow}>›</Text>
         </TouchableOpacity>
       </View>
+
+      <TouchableOpacity
+        style={s.shortcutCard}
+        onPress={() => navigation.navigate('Más', { screen: 'Cobros' })}
+      >
+        <Text style={s.shortcutIcon}>💳</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={s.shortcutTitle}>Cobros y deudas</Text>
+          <Text style={s.shortcutHint}>Qué te deben y qué debés</Text>
+        </View>
+        <Text style={s.shortcutArrow}>›</Text>
+      </TouchableOpacity>
 
       {error ? (
         <View style={s.errorCard}>
@@ -747,6 +746,20 @@ const s = StyleSheet.create({
   monthSwitcherCenter: { flex: 1, alignItems: 'center', gap: 2 },
   monthSwitcherLabel: { color: '#fff', fontWeight: '700', fontSize: 16 },
   monthFutureHint: { color: '#FBBF24', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
+  shortcutCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: 'rgba(139,92,246,0.10)',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(139,92,246,0.25)',
+  },
+  shortcutIcon: { fontSize: 22 },
+  shortcutTitle: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  shortcutHint: { color: 'rgba(255,255,255,0.45)', fontSize: 12, marginTop: 2 },
+  shortcutArrow: { color: 'rgba(196,135,246,0.6)', fontSize: 22 },
   errorCard: {
     backgroundColor: 'rgba(248,113,113,0.08)',
     borderRadius: 14,

@@ -14,6 +14,10 @@ import PresupuestoScreen from '../screens/presupuesto/PresupuestoScreen'
 import CobrosScreen from '../screens/cobros/CobrosScreen'
 import SimuladorScreen from '../screens/simulador/SimuladorScreen'
 import PerfilScreen from '../screens/perfil/PerfilScreen'
+import ImportarScreen from '../screens/importar/ImportarScreen'
+import ReportesScreen from '../screens/reportes/ReportesScreen'
+import PlanesScreen from '../screens/planes/PlanesScreen'
+import PagoScreen from '../screens/planes/PagoScreen'
 
 const Stack = createNativeStackNavigator()
 const Tab = createBottomTabNavigator()
@@ -25,6 +29,9 @@ function MasMenu({ navigation }) {
     { icon: '🎯', label: 'Presupuesto', screen: 'Presupuesto' },
     { icon: '🔮', label: 'Simulador', screen: 'Simulador' },
     { icon: '🧩', label: 'Diferidos', screen: 'Diferidos' },
+    { icon: '📥', label: 'Importar movimientos', screen: 'Importar' },
+    { icon: '📄', label: 'Reportes', screen: 'Reportes' },
+    { icon: '⭐', label: 'Planes', screen: 'Planes' },
     { icon: '👤', label: 'Mi perfil', screen: 'Perfil' },
   ]
   return (
@@ -59,6 +66,10 @@ function MasNavigator() {
       <MasStack.Screen name="Presupuesto" component={PresupuestoScreen} />
       <MasStack.Screen name="Simulador" component={SimuladorScreen} />
       <MasStack.Screen name="Diferidos" component={DeferidosScreen} />
+      <MasStack.Screen name="Importar" component={ImportarScreen} />
+      <MasStack.Screen name="Reportes" component={ReportesScreen} />
+      <MasStack.Screen name="Planes" component={PlanesScreen} />
+      <MasStack.Screen name="Pago" component={PagoScreen} />
       <MasStack.Screen name="Perfil" component={PerfilScreen} />
     </MasStack.Navigator>
   )
