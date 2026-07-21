@@ -7,15 +7,19 @@ import { Audio } from 'expo-av'
 import api from '../../api/client'
 import { getApiErrorMessage } from '../../api/errors'
 
-const TIPO_LABELS = { ingreso_fijo: 'Ingreso fijo', ingreso_puntual: 'Ingreso puntual', gasto_fijo: 'Gasto fijo', gasto_puntual: 'Gasto puntual' }
-const ENDPOINT_MAP = { ingreso_fijo: '/finanzas/ingresos/', ingreso_puntual: '/finanzas/ingresos-puntuales/', gasto_fijo: '/finanzas/gastos-corrientes/', gasto_puntual: '/finanzas/gastos-no-corrientes/' }
+const TIPO_LABELS = { ingreso_fijo: 'Ingreso fijo', ingreso_puntual: 'Ingreso puntual', gasto_fijo: 'Gasto fijo', gasto_variable: 'Gasto variable', gasto_puntual: 'Gasto puntual' }
+// Los gastos variables viven en el mismo endpoint que los fijos; los distingue tipo_monto.
+const ENDPOINT_MAP = { ingreso_fijo: '/finanzas/ingresos/', ingreso_puntual: '/finanzas/ingresos-puntuales/', gasto_fijo: '/finanzas/gastos-corrientes/', gasto_variable: '/finanzas/gastos-corrientes/', gasto_puntual: '/finanzas/gastos-no-corrientes/' }
+const TIPOS_RECURRENTES = ['ingreso_fijo', 'gasto_fijo', 'gasto_variable']
+const TIPOS_INGRESO = ['ingreso_fijo', 'ingreso_puntual']
+const TIPOS_GASTO = ['gasto_fijo', 'gasto_variable', 'gasto_puntual']
 const FREQ_LABELS = { diario: 'Diario', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual', bimestral: 'Bimestral', trimestral: 'Trimestral', semestral: 'Semestral', anual: 'Anual' }
 const CATEGORIAS = ['vivienda','alimentacion','transporte','salud','educacion','entretenimiento','ropa','servicios','tecnologia','deudas','ahorro','otro']
 
 function buildPayload(parsed) {
-  const esFijo = parsed.tipo === 'ingreso_fijo' || parsed.tipo === 'gasto_fijo'
-  const esIngreso = parsed.tipo === 'ingreso_fijo' || parsed.tipo === 'ingreso_puntual'
-  if (esFijo) return { descripcion: parsed.descripcion, monto: parseFloat(parsed.monto), frecuencia: parsed.frecuencia || 'mensual', fecha_inicio: parsed.fecha || new Date().toISOString().slice(0, 10), activo: true, ...(!esIngreso && { categoria: parsed.categoria || 'otro' }) }
+  const esRecurrente = TIPOS_RECURRENTES.includes(parsed.tipo)
+  const esIngreso = TIPOS_INGRESO.includes(parsed.tipo)
+  if (esRecurrente) return { descripcion: parsed.descripcion, monto: parseFloat(parsed.monto), frecuencia: parsed.frecuencia || 'mensual', fecha_inicio: parsed.fecha || new Date().toISOString().slice(0, 10), activo: true, ...(!esIngreso && { categoria: parsed.categoria || 'otro' }), ...(parsed.tipo === 'gasto_variable' && { tipo_monto: 'variable' }) }
   return { descripcion: parsed.descripcion, monto: parseFloat(parsed.monto), fecha: parsed.fecha || new Date().toISOString().slice(0, 10), ...(!esIngreso && { categoria: parsed.categoria || 'otro' }) }
 }
 
@@ -134,8 +138,8 @@ export default function AsistenteScreen() {
     }
   }
 
-  const esGasto = parsed?.tipo?.startsWith('gasto')
-  const esFijo = parsed?.tipo?.endsWith('fijo')
+  const esGasto = TIPOS_GASTO.includes(parsed?.tipo)
+  const esFijo = TIPOS_RECURRENTES.includes(parsed?.tipo)
 
   if (exito) return (
     <View style={[s.root, s.center]}>
