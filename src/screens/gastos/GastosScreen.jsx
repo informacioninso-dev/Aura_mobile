@@ -108,11 +108,13 @@ export default function GastosScreen() {
     const item = realModal.item
     if (!item) return
     const ahora = new Date()
+    // Fecha LOCAL (no UTC) para no registrar un consumo con "fecha futura"
+    // en zonas UTC- (ej. Ecuador). El backend deriva anio/mes de la fecha.
+    const fecha = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`
     setSaving(true)
     try {
       await api.post(`/finanzas/gastos-corrientes/${item.id}/ejecuciones/`, {
-        anio: ahora.getFullYear(),
-        mes: ahora.getMonth() + 1,
+        fecha,
         monto_real: parseFloat(values.monto_real) || 0,
       })
       setRealModal({ visible: false, item: null })
