@@ -77,6 +77,19 @@ function occursInMonth(item, monthDate, dateField = 'fecha') {
   return targetDate >= monthStart && targetDate <= monthEnd
 }
 
+// Un rubro variable con consumos registrados en el mes vale su gasto real; el
+// estimado solo aplica mientras no haya consumos. El backend entrega
+// monto_real_mes solo para el mes consultado (null en el resto).
+function montoDelMes(item) {
+  return item?.monto_real_mes ?? item?.monto
+}
+
+// La ultima cuota de un diferido absorbe el residuo del redondeo, asi que no
+// siempre vale lo mismo que cuota_mensual.
+function cuotaDelMes(item) {
+  return Number(item?.cuota_mes ?? item?.cuota_mensual ?? 0)
+}
+
 function getFrequencyLabel(value) {
   const labels = {
     diario: 'Diario',
@@ -113,15 +126,19 @@ export default function DashboardScreen({ navigation }) {
   const projectionFutureMonths = advancedProjectionEnabled ? Math.min(12, advancedProjectionMaxMonths) : freeFutureMonths
   const projectionPastMonths = advancedProjectionEnabled ? 6 : freePastMonths
 
-  const loadBase = useCallback(async ({ silent = false } = {}) => {
+  const loadBase = useCallback(async (month, { silent = false } = {}) => {
     if (!silent) {
       setLoading(true)
       setError('')
     }
 
     try {
+      // El mes va en la peticion: el backend resuelve con el los montos que
+      // dependen del periodo (consumo real de un rubro variable y la cuota que
+      // toca de un diferido). Sin el, al navegar a otro mes se mostrarian los
+      // valores del mes actual.
       const [dashboardResponse, projectionResponse] = await Promise.all([
-        api.get('/finanzas/dashboard/'),
+        api.get(`/finanzas/dashboard/?anio=${month.getFullYear()}&mes=${month.getMonth() + 1}`),
         api.get(`/finanzas/proyeccion-acumulada/?months=${projectionFutureMonths}&past_months=${projectionPastMonths}`),
       ])
 
@@ -171,8 +188,8 @@ export default function DashboardScreen({ navigation }) {
   }, [])
 
   useEffect(() => {
-    void loadBase()
-  }, [loadBase])
+    void loadBase(selectedMonth)
+  }, [loadBase, selectedMonth])
 
   useEffect(() => {
     void loadReport(selectedMonth)
@@ -183,7 +200,7 @@ export default function DashboardScreen({ navigation }) {
     setError('')
     try {
       await Promise.all([
-        loadBase({ silent: true }),
+        loadBase(selectedMonth, { silent: true }),
         loadReport(selectedMonth, { silent: true }),
       ])
     } finally {
@@ -309,13 +326,13 @@ export default function DashboardScreen({ navigation }) {
         id: `expense-fixed-${item.id}`,
         label: item.descripcion,
         meta: `${item.categoria || 'Sin categoría'} · ${getFrequencyLabel(item.frecuencia)}`,
-        amount: montoEfectivoMes(item.monto, item.frecuencia, item.fecha_inicio, selectedMonth.getFullYear(), selectedMonth.getMonth() + 1),
+        amount: montoEfectivoMes(montoDelMes(item), item.frecuencia, item.fecha_inicio, selectedMonth.getFullYear(), selectedMonth.getMonth() + 1),
       })),
       ...installmentsThisMonth.map((item) => ({
         id: `expense-installment-${item.id}`,
         label: item.descripcion,
         meta: `${item.categoria || 'Sin categoría'} · cuota mensual`,
-        amount: Number(item.cuota_mensual || 0),
+        amount: cuotaDelMes(item),
       })),
       ...punctualExpensesThisMonth.map((item) => ({
         id: `expense-punctual-${item.id}`,
@@ -343,11 +360,11 @@ export default function DashboardScreen({ navigation }) {
     [punctualIncomesThisMonth],
   )
   const fixedExpenseTotal = useMemo(
-    () => fixedExpensesThisMonth.reduce((sum, item) => sum + montoEfectivoMes(item.monto, item.frecuencia, item.fecha_inicio, selectedMonth.getFullYear(), selectedMonth.getMonth() + 1), 0),
+    () => fixedExpensesThisMonth.reduce((sum, item) => sum + montoEfectivoMes(montoDelMes(item), item.frecuencia, item.fecha_inicio, selectedMonth.getFullYear(), selectedMonth.getMonth() + 1), 0),
     [fixedExpensesThisMonth, selectedMonth],
   )
   const installmentTotal = useMemo(
-    () => installmentsThisMonth.reduce((sum, item) => sum + Number(item.cuota_mensual || 0), 0),
+    () => installmentsThisMonth.reduce((sum, item) => sum + cuotaDelMes(item), 0),
     [installmentsThisMonth],
   )
   const punctualExpenseTotal = useMemo(

@@ -1,4 +1,7 @@
-const DEFAULT_LOCALE = 'es-419'
+// Formato fijo para toda la app: 1,146.42 (coma de miles, punto decimal), igual
+// que la web. Antes dependia del idioma del dispositivo, asi que el mismo dato se
+// veia "1.234,50" o "1,234.50" segun el telefono, y distinto de la web.
+const DEFAULT_LOCALE = 'en-US'
 
 let currentCurrency = 'USD'
 
@@ -7,9 +10,7 @@ export function setMoneyCurrency(currency) {
 }
 
 function resolveLocale(locale) {
-  if (locale) return locale
-  if (typeof navigator !== 'undefined' && navigator.language) return navigator.language
-  return DEFAULT_LOCALE
+  return locale || DEFAULT_LOCALE
 }
 
 function toFiniteNumber(value) {
