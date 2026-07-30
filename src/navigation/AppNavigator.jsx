@@ -1,17 +1,21 @@
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { ActivityIndicator, Text, View, TouchableOpacity, StyleSheet, ScrollView, Platform } from 'react-native'
+import { ActivityIndicator, Text, View, TouchableOpacity, StyleSheet, ScrollView, Platform, Linking } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuth } from '../context/AuthContext'
 
 import LoginScreen from '../screens/auth/LoginScreen'
+import RegistroScreen from '../screens/auth/RegistroScreen'
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen'
+import ResetPasswordScreen from '../screens/auth/ResetPasswordScreen'
 import DashboardScreen from '../screens/dashboard/DashboardScreen'
 import IngresosScreen from '../screens/ingresos/IngresosScreen'
 import GastosScreen from '../screens/gastos/GastosScreen'
 import DeferidosScreen from '../screens/diferidos/DeferidosScreen'
 import AsistenteScreen from '../screens/asistente/AsistenteScreen'
 import PresupuestoScreen from '../screens/presupuesto/PresupuestoScreen'
+import SaludFinancieraScreen from '../screens/salud/SaludFinancieraScreen'
 import CobrosScreen from '../screens/cobros/CobrosScreen'
 import SimuladorScreen from '../screens/simulador/SimuladorScreen'
 import PerfilScreen from '../screens/perfil/PerfilScreen'
@@ -24,8 +28,30 @@ const Stack = createNativeStackNavigator()
 const Tab = createBottomTabNavigator()
 const MasStack = createNativeStackNavigator()
 
+// El correo de recuperacion trae uid y token en la URL. Con el scheme "aura"
+// declarado en app.json, aura://reset-password?uid=..&token=.. abre la pantalla
+// con los datos ya cargados; si el correo se abre en el navegador en vez de la
+// app, la pantalla permite pegarlos a mano.
+const linking = {
+  prefixes: ['aura://'],
+  config: {
+    screens: {
+      Login: 'login',
+      Registro: 'registro',
+      ForgotPassword: 'forgot-password',
+      ResetPassword: 'reset-password',
+    },
+  },
+}
+
+// Los textos legales viven solo en la web: duplicarlos en la app garantiza que
+// tarde o temprano queden desincronizados, y en textos legales eso importa.
+const PRIVACY_URL = 'https://aura.binnso.com/privacidad'
+const TERMS_URL = 'https://aura.binnso.com/terminos'
+
 function MasMenu({ navigation }) {
   const items = [
+    { icon: '🛡️', label: 'Salud financiera', screen: 'SaludFinanciera' },
     { icon: '💳', label: 'Cobros y deudas', screen: 'Cobros' },
     { icon: '🎯', label: 'Presupuesto', screen: 'Presupuesto' },
     { icon: '🔮', label: 'Simulador', screen: 'Simulador' },
@@ -34,15 +60,21 @@ function MasMenu({ navigation }) {
     { icon: '📄', label: 'Reportes', screen: 'Reportes' },
     { icon: '⭐', label: 'Planes', screen: 'Planes' },
     { icon: '👤', label: 'Mi perfil', screen: 'Perfil' },
+    { icon: '🔐', label: 'Aviso de Privacidad', url: PRIVACY_URL },
+    { icon: '📜', label: 'Términos de Uso', url: TERMS_URL },
   ]
   return (
     <ScrollView style={ms.root} contentContainerStyle={ms.content}>
       <Text style={ms.title}>Más</Text>
       {items.map((item) => (
-        <TouchableOpacity key={item.screen} style={ms.item} onPress={() => navigation.navigate(item.screen)}>
+        <TouchableOpacity
+          key={item.screen || item.url}
+          style={ms.item}
+          onPress={() => (item.url ? Linking.openURL(item.url) : navigation.navigate(item.screen))}
+        >
           <Text style={ms.icon}>{item.icon}</Text>
           <Text style={ms.label}>{item.label}</Text>
-          <Text style={ms.arrow}>›</Text>
+          <Text style={ms.arrow}>{item.url ? '↗' : '›'}</Text>
         </TouchableOpacity>
       ))}
     </ScrollView>
@@ -63,6 +95,7 @@ function MasNavigator() {
   return (
     <MasStack.Navigator screenOptions={{ headerShown: false }}>
       <MasStack.Screen name="MasMenu" component={MasMenu} />
+      <MasStack.Screen name="SaludFinanciera" component={SaludFinancieraScreen} />
       <MasStack.Screen name="Cobros" component={CobrosScreen} />
       <MasStack.Screen name="Presupuesto" component={PresupuestoScreen} />
       <MasStack.Screen name="Simulador" component={SimuladorScreen} />
@@ -150,11 +183,18 @@ export default function AppNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user
           ? <Stack.Screen name="Main" component={MainTabs} />
-          : <Stack.Screen name="Login" component={LoginScreen} />
+          : (
+            <>
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Registro" component={RegistroScreen} />
+              <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+              <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+            </>
+          )
         }
       </Stack.Navigator>
     </NavigationContainer>

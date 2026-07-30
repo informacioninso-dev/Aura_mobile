@@ -21,10 +21,10 @@ const FIELDS_PUNTUAL = [
   { key: 'fecha', label: 'Fecha', type: 'date' },
 ]
 
-export default function IngresosScreen() {
+export default function IngresosScreen({ route, navigation }) {
   const [fijos, setFijos] = useState([])
   const [puntuales, setPuntuales] = useState([])
-  const [tab, setTab] = useState('fijos')
+  const [tab, setTab] = useState(route?.params?.tab || 'fijos')
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState({ visible: false, item: null })
   const [saving, setSaving] = useState(false)
@@ -38,8 +38,19 @@ export default function IngresosScreen() {
 
   useEffect(() => { cargar() }, [cargar])
 
-  function abrirCrear() {
-    const defaults = tab === 'fijos'
+  // Acceso rapido desde el dashboard: abre el formulario sin pasos intermedios.
+  useEffect(() => {
+    const params = route?.params
+    if (!params?.autoNew) return
+    if (params.tab) setTab(params.tab)
+    navigation?.setParams?.({ autoNew: false })
+    const timer = setTimeout(() => abrirCrear(params.tab || tab), 0)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route?.params?.autoNew, route?.params?.tab])
+
+  function abrirCrear(tipoTab = tab) {
+    const defaults = tipoTab === 'fijos'
       ? { frecuencia: 'mensual', fecha_inicio: new Date().toISOString().slice(0, 10), activo: true }
       : { fecha: new Date().toISOString().slice(0, 10) }
     setModal({ visible: true, item: null, defaults })

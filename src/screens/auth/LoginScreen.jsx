@@ -6,7 +6,7 @@ import { getAccess, getRefresh } from '../../api/authStorage'
 import { useBiometrics } from '../../hooks/useBiometrics'
 import { registrarNotificaciones } from '../../hooks/useNotifications'
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }) {
   const { login, restoreSession } = useAuth()
   const { disponible, habilitado, tipo, autenticar } = useBiometrics()
   const [email, setEmail] = useState('')
@@ -121,6 +121,14 @@ export default function LoginScreen() {
             <Text style={s.bioBtnText}>{tipo === 'Face ID' ? '😊' : '🔒'} Entrar con {tipo}</Text>
           </TouchableOpacity>
         )}
+
+        <TouchableOpacity style={s.linkButton} onPress={() => navigation.navigate('ForgotPassword')}>
+          <Text style={s.linkText}>Olvide mi contraseña</Text>
+        </TouchableOpacity>
+        <View style={s.registerRow}>
+          <Text style={s.registerCopy}>¿Aun no tienes cuenta? </Text>
+          <Text style={s.registerLink} onPress={() => navigation.navigate('Registro')}>Crear cuenta gratis</Text>
+        </View>
       </View>
     </KeyboardAvoidingView>
   )
@@ -144,4 +152,9 @@ const s = StyleSheet.create({
   bioBtn: { borderWidth: 1, borderColor: 'rgba(196,135,246,0.3)', borderRadius: 12, padding: 13, alignItems: 'center', backgroundColor: 'rgba(196,135,246,0.08)' },
   bioBtnText: { color: '#C487F6', fontWeight: '600', fontSize: 14 },
   error: { color: '#F87171', fontSize: 13, textAlign: 'center' },
+  linkButton: { alignItems: 'center', paddingVertical: 5 },
+  linkText: { color: '#C487F6', fontSize: 12, fontWeight: '600' },
+  registerRow: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', marginTop: 2 },
+  registerCopy: { color: 'rgba(255,255,255,0.38)', fontSize: 12 },
+  registerLink: { color: '#16C79A', fontSize: 12, fontWeight: '800' },
 })

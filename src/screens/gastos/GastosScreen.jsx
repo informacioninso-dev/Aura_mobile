@@ -49,11 +49,11 @@ const CONFIG_TAB = {
   puntuales: { endpoint: '/finanzas/gastos-no-corrientes/', fields: FIELDS_PUNTUAL, titulo: 'puntual' },
 }
 
-export default function GastosScreen() {
+export default function GastosScreen({ route, navigation }) {
   const [fijos, setFijos] = useState([])
   const [variables, setVariables] = useState([])
   const [puntuales, setPuntuales] = useState([])
-  const [tab, setTab] = useState('fijos')
+  const [tab, setTab] = useState(route?.params?.tab || 'fijos')
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState({ visible: false, item: null })
   const [realModal, setRealModal] = useState({ visible: false, item: null })
@@ -76,16 +76,29 @@ export default function GastosScreen() {
 
   useEffect(() => { cargar() }, [cargar])
 
-  function abrirCrear() {
+  // Acceso rapido desde el dashboard: abre el formulario del tipo pedido sin
+  // que haya que entrar a la pestaña y buscar el boton. El parametro se limpia
+  // para que al volver a esta pantalla no se reabra solo.
+  useEffect(() => {
+    const params = route?.params
+    if (!params?.autoNew) return
+    if (params.tab) setTab(params.tab)
+    navigation?.setParams?.({ autoNew: false })
+    const timer = setTimeout(() => abrirCrear(params.tab || tab), 0)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route?.params?.autoNew, route?.params?.tab])
+
+  function abrirCrear(tipoTab = tab) {
     const hoy = new Date().toISOString().slice(0, 10)
-    const defaults = tab === 'puntuales'
+    const defaults = tipoTab === 'puntuales'
       ? { categoria: 'otro', fecha: hoy }
       : {
         frecuencia: 'mensual',
         categoria: 'otro',
         fecha_inicio: hoy,
         activo: true,
-        tipo_monto: tab === 'variables' ? 'variable' : 'fijo',
+        tipo_monto: tipoTab === 'variables' ? 'variable' : 'fijo',
       }
     setModal({ visible: true, item: null, defaults })
   }

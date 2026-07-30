@@ -62,6 +62,29 @@ export function AuthProvider({ children }) {
     await fetchMe()
   }
 
+  // Tras registrarse se entra directo: el backend ya valido el correo y la clave,
+  // pedirlas otra vez en el login seria friccion sin proposito.
+  async function register(payload) {
+    await api.post('/usuarios/registro/', payload)
+    await login(payload.email, payload.password)
+  }
+
+  async function forgotPassword(email) {
+    const { data } = await api.post('/usuarios/password/forgot/', { email })
+    return data
+  }
+
+  // uid y token llegan en el enlace del correo. El backend invalida las sesiones
+  // abiertas al cambiar la clave, por eso hay que volver a iniciar sesion.
+  async function resetPassword({ uid, token, newPassword }) {
+    const { data } = await api.post('/usuarios/password/reset/', {
+      uid,
+      token,
+      new_password: newPassword,
+    })
+    return data
+  }
+
   async function logout() {
     try {
       const refresh = await getRefresh()
@@ -78,7 +101,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, restoreSession, fetchMe }}>
+    <AuthContext.Provider value={{ user, loading, login, register, forgotPassword, resetPassword, logout, restoreSession, fetchMe }}>
       {children}
     </AuthContext.Provider>
   )

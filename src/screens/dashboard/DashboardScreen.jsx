@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   RefreshControl,
+  TextInput,
 } from 'react-native'
 
 import { useAuth } from '../../context/AuthContext'
@@ -17,6 +18,15 @@ import ProjectionChart from '../../components/ui/ProjectionChart'
 import { getApiErrorMessage } from '../../api/errors'
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+
+// Los cuatro registros mas frecuentes. Navegan al tab con el formulario ya
+// abierto en el tipo correcto.
+const QUICK_ACTIONS = [
+  { key: 'gasto', icon: '💸', label: 'Gasto', screen: 'Gastos', tab: 'fijos' },
+  { key: 'variable', icon: '🛒', label: 'Consumo', screen: 'Gastos', tab: 'variables' },
+  { key: 'ingreso', icon: '💰', label: 'Ingreso', screen: 'Ingresos', tab: 'fijos' },
+  { key: 'puntual', icon: '⚡', label: 'Puntual', screen: 'Gastos', tab: 'puntuales' },
+]
 
 const EMPTY_MOVEMENTS = {
   ingresos: [],
@@ -108,6 +118,8 @@ export default function DashboardScreen({ navigation }) {
   const { user, logout } = useAuth()
   const currentMonth = useMemo(() => startOfMonth(new Date()), [])
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)
+  const [ahorroInicial, setAhorroInicial] = useState('')
+  const [savingAhorro, setSavingAhorro] = useState(false)
   const [movements, setMovements] = useState(EMPTY_MOVEMENTS)
   const [report, setReport] = useState(null)
   const [reportMonthKey, setReportMonthKey] = useState('')
@@ -194,6 +206,35 @@ export default function DashboardScreen({ navigation }) {
   useEffect(() => {
     void loadReport(selectedMonth)
   }, [loadReport, selectedMonth])
+
+  // El ahorro inicial se guarda como un ingreso puntual con fecha de hoy, igual
+  // que en la web: asi la proyeccion y el colchon arrancan desde el saldo real
+  // en vez de desde cero.
+  async function guardarAhorroInicial() {
+    const monto = parseFloat(ahorroInicial)
+    if (!monto || monto <= 0 || savingAhorro) return
+    setSavingAhorro(true)
+    try {
+      const hoy = new Date()
+      const fecha = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`
+      await api.post('/finanzas/ingresos-puntuales/', {
+        descripcion: 'Ahorros iniciales',
+        monto,
+        fecha,
+        notas: 'Saldo con el que empiezo a usar Aura',
+        incluir_en_proyeccion: true,
+      })
+      setAhorroInicial('')
+      await Promise.all([
+        loadBase(selectedMonth, { silent: true }),
+        loadReport(selectedMonth, { silent: true }),
+      ])
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'No se pudo guardar tu ahorro inicial.'))
+    } finally {
+      setSavingAhorro(false)
+    }
+  }
 
   async function onRefresh() {
     setRefreshing(true)
@@ -495,6 +536,35 @@ export default function DashboardScreen({ navigation }) {
           <Text style={s.emptyText}>
             Carga un ingreso, un gasto o importa tu historial. Con eso Aura ya te empieza a mostrar tu panorama.
           </Text>
+
+          <View style={s.ahorroBlock}>
+            <Text style={s.ahorroLabel}>¿Ya tienes ahorros? Empieza con tu saldo real</Text>
+            <View style={s.ahorroRow}>
+              <Text style={s.ahorroPrefix}>$</Text>
+              <TextInput
+                style={s.ahorroInput}
+                value={ahorroInicial}
+                onChangeText={setAhorroInicial}
+                placeholder="Ej: 500"
+                placeholderTextColor="rgba(255,255,255,0.25)"
+                keyboardType="decimal-pad"
+                editable={!savingAhorro}
+              />
+              <TouchableOpacity
+                style={[s.ahorroBtn, (!ahorroInicial || savingAhorro) && s.ahorroBtnOff]}
+                onPress={guardarAhorroInicial}
+                disabled={!ahorroInicial || savingAhorro}
+              >
+                {savingAhorro
+                  ? <ActivityIndicator color="#07131F" size="small" />
+                  : <Text style={s.ahorroBtnText}>Empezar</Text>}
+              </TouchableOpacity>
+            </View>
+            <Text style={s.ahorroHint}>
+              Suma todo lo que tengas ahorrado hoy. Es el punto de partida para que tu
+              proyeccion y tu colchon arranquen bien.
+            </Text>
+          </View>
         </View>
       )}
 
@@ -525,6 +595,21 @@ export default function DashboardScreen({ navigation }) {
           <Text style={s.summaryLoadingText}>Actualizando el resumen de {selectedMonthLabel.toLowerCase()}...</Text>
         </View>
       ) : null}
+
+      {/* Registrar es lo que mas se repite en el dia a dia: desde aqui es un
+          solo toque en vez de entrar a la pestaña y buscar el boton. */}
+      <View style={s.quickRow}>
+        {QUICK_ACTIONS.map((accion) => (
+          <TouchableOpacity
+            key={accion.key}
+            style={s.quickBtn}
+            onPress={() => navigation.navigate(accion.screen, { autoNew: true, tab: accion.tab })}
+          >
+            <Text style={s.quickIcon}>{accion.icon}</Text>
+            <Text style={s.quickLabel}>{accion.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       <View style={s.grid}>
         <StatCard label="Ingresos" value={totalIngresos} color="#10B981" icon="💰" />
@@ -800,6 +885,15 @@ const s = StyleSheet.create({
   },
   emptyTitle: { color: '#fff', fontWeight: '700', fontSize: 16, marginBottom: 6 },
   emptyText: { color: 'rgba(255,255,255,0.5)', fontSize: 13, lineHeight: 18 },
+  ahorroBlock: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)', gap: 8 },
+  ahorroLabel: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  ahorroRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  ahorroPrefix: { color: 'rgba(255,255,255,0.4)', fontSize: 16, fontWeight: '600' },
+  ahorroInput: { flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 12, paddingVertical: 10, color: '#fff', fontSize: 15 },
+  ahorroBtn: { backgroundColor: '#16C79A', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 11, minWidth: 92, alignItems: 'center' },
+  ahorroBtnOff: { opacity: 0.4 },
+  ahorroBtnText: { color: '#07131F', fontSize: 14, fontWeight: '800' },
+  ahorroHint: { color: 'rgba(255,255,255,0.35)', fontSize: 11, lineHeight: 15 },
   heroCard: {
     backgroundColor: 'rgba(196,135,246,0.08)',
     borderRadius: 18,
@@ -847,6 +941,10 @@ const s = StyleSheet.create({
   },
   summaryLoadingText: { color: 'rgba(255,255,255,0.48)', fontSize: 12, flex: 1 },
   grid: { flexDirection: 'row', gap: 12 },
+  quickRow: { flexDirection: 'row', gap: 8 },
+  quickBtn: { flex: 1, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 14, paddingVertical: 12, alignItems: 'center', gap: 4, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  quickIcon: { fontSize: 20 },
+  quickLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '600' },
   statCard: {
     flex: 1,
     backgroundColor: 'rgba(255,255,255,0.05)',
