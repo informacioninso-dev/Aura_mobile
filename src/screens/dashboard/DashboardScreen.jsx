@@ -460,6 +460,11 @@ export default function DashboardScreen({ navigation }) {
     ? `${projection.display_past_months || projectionPastMonths} meses reales · ${projection.months || projectionFutureMonths} proyectados`
     : `${projectionPastMonths} meses reales · ${projectionFutureMonths} proyectados`
 
+  // Ultimo punto proyectado: su saldo de cierre es "con lo que terminarias".
+  const projLast = projection?.series?.length ? projection.series[projection.series.length - 1] : null
+  const projCierre = Number(projLast?.closing_balance ?? 0)
+  const esModoSimple = projection?.projection_mode === 'simple'
+
   if (loading && reportLoading) {
     return (
       <View style={s.loaderScreen}>
@@ -760,6 +765,38 @@ export default function DashboardScreen({ navigation }) {
         <Text style={s.projectionCopy}>
           {projectionWindowCopy}
         </Text>
+
+        {projection ? (
+          <View style={s.projTiles}>
+            <View style={[s.projTile, s.projTileWide]}>
+              <Text style={s.projTileLabel}>Si sigues así, terminarías con</Text>
+              <Text style={[s.projTileVal, { color: projCierre >= 0 ? '#C487F6' : '#F87171' }]}>{formatMoney(projCierre)}</Text>
+              <Text style={s.projTileHint}>Saldo estimado al cierre de {projLast?.label || 'el horizonte'}</Text>
+            </View>
+            <View style={s.projTile}>
+              <Text style={s.projTileLabel}>Hoy partes con</Text>
+              <Text style={s.projTileVal}>{formatMoney(Number(projection.starting_balance ?? 0))}</Text>
+              <Text style={s.projTileHint}>Saldo con el que arranca</Text>
+            </View>
+            <View style={s.projTile}>
+              <Text style={s.projTileLabel}>Gastos variables / mes</Text>
+              <Text style={[s.projTileVal, { color: '#F87171' }]}>{formatMoney(Number(projection.variable_monthly_estimate ?? 0))}</Text>
+              <Text style={s.projTileHint}>{esModoSimple ? 'Con tus estimados' : 'Estimado del historial (ponderado)'}</Text>
+            </View>
+            {advancedProjectionEnabled ? (
+              <View style={[s.projTile, s.projTileWide]}>
+                <Text style={s.projTileLabel}>Cálculo de variables</Text>
+                <Text style={[s.projTileVal, { color: '#fff' }]}>{esModoSimple ? 'Estimado' : 'Ponderado'}</Text>
+                <Text style={s.projTileHint}>
+                  {esModoSimple
+                    ? 'Usa los montos que registraste'
+                    : `${Number(projection.variable_history_observations ?? 0)} ${Number(projection.variable_history_observations ?? 0) === 1 ? 'registro' : 'registros'} · el último año pesa doble`}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+
         <ProjectionChart
           data={projection}
           loading={loading}
@@ -1026,6 +1063,17 @@ const s = StyleSheet.create({
   sectionHint: { color: 'rgba(255,255,255,0.35)', fontSize: 11 },
   sectionTotal: { fontSize: 14, fontWeight: '800' },
   projectionCopy: { color: 'rgba(255,255,255,0.45)', fontSize: 12, marginBottom: 12 },
+  projTiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
+  projTile: {
+    flexGrow: 1, flexBasis: '47%', minWidth: 130,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 12, padding: 12,
+  },
+  projTileWide: { flexBasis: '100%' },
+  projTileLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.3 },
+  projTileVal: { color: '#fff', fontSize: 18, fontWeight: '800', marginTop: 3 },
+  projTileHint: { color: 'rgba(255,255,255,0.4)', fontSize: 11, marginTop: 3, lineHeight: 15 },
   detailRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 10 },
   detailLabel: { color: '#fff', fontSize: 13, fontWeight: '600' },
   detailMeta: { color: 'rgba(255,255,255,0.38)', fontSize: 11, marginTop: 2 },
