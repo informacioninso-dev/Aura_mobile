@@ -168,7 +168,7 @@ export default function SaludFinancieraScreen() {
       </View>
 
       {loading ? (
-        <View style={s.center}><ActivityIndicator color="#C487F6" /></View>
+        <View style={s.center}><ActivityIndicator color={colors.primary} /></View>
       ) : error ? (
         <View style={s.center}><Text style={s.empty}>{error}</Text></View>
       ) : !data ? (
@@ -177,7 +177,7 @@ export default function SaludFinancieraScreen() {
         <ScrollView
           contentContainerStyle={{ padding: 16, paddingBottom: 100, gap: 12 }}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#C487F6" />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
           }
         >
           <View style={s.scoreCard}>

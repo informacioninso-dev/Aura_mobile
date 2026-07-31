@@ -169,21 +169,21 @@ export default function ReportesScreen() {
             onPress={descargarCSV}
             disabled={exportingCsv || exportingPdf}
           >
-            {exportingCsv ? <ActivityIndicator color="#fff" /> : <Text style={s.actionBtnText}>📊 Descargar CSV</Text>}
+            {exportingCsv ? <ActivityIndicator color={colors.text} /> : <Text style={s.actionBtnText}>📊 Descargar CSV</Text>}
           </TouchableOpacity>
           <TouchableOpacity
             style={[s.actionBtn, s.actionBtnSecondary, (exportingCsv || exportingPdf) && s.btnDisabled]}
             onPress={descargarPDF}
             disabled={exportingCsv || exportingPdf}
           >
-            {exportingPdf ? <ActivityIndicator color="#C487F6" /> : <Text style={s.actionBtnTextSecondary}>📄 Descargar PDF</Text>}
+            {exportingPdf ? <ActivityIndicator color={colors.primary} /> : <Text style={s.actionBtnTextSecondary}>📄 Descargar PDF</Text>}
           </TouchableOpacity>
         </View>
       )}
 
       {loading && (
         <View style={s.center}>
-          <ActivityIndicator color="#C487F6" />
+          <ActivityIndicator color={colors.primary} />
         </View>
       )}
 
@@ -192,10 +192,10 @@ export default function ReportesScreen() {
       {!loading && data && (
         <>
           <View style={s.grid2}>
-            <SummaryCard label="Ingresos" value={data.resumen.total_ingresos} color="#10B981" />
-            <SummaryCard label="Gastos" value={data.resumen.total_gastos} color="#F87171" />
+            <SummaryCard label="Ingresos" value={data.resumen.total_ingresos} color={colors.success} />
+            <SummaryCard label="Gastos" value={data.resumen.total_gastos} color={colors.danger} />
             <SummaryCard label="Balance" value={data.resumen.balance} color={balanceColor} signed />
-            <SummaryCard label="Tasa de ahorro" value={data.resumen.tasa_ahorro} color="#C487F6" isPercent />
+            <SummaryCard label="Tasa de ahorro" value={data.resumen.tasa_ahorro} color={colors.primary} isPercent />
           </View>
 
           <View style={s.grid2}>

@@ -472,7 +472,7 @@ export default function DashboardScreen({ navigation }) {
   if (loading && reportLoading) {
     return (
       <View style={s.loaderScreen}>
-        <ActivityIndicator color="#C487F6" size="large" />
+        <ActivityIndicator color={colors.primary} size="large" />
         <Text style={s.loaderText}>Cargando tu dashboard...</Text>
       </View>
     )
@@ -486,7 +486,7 @@ export default function DashboardScreen({ navigation }) {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor="#C487F6"
+          tintColor={colors.primary}
         />
       )}
     >
@@ -532,7 +532,7 @@ export default function DashboardScreen({ navigation }) {
         <Text style={s.shortcutIcon}>💳</Text>
         <View style={{ flex: 1 }}>
           <Text style={s.shortcutTitle}>Cobros y deudas</Text>
-          <Text style={s.shortcutHint}>Qué te deben y qué debés</Text>
+          <Text style={s.shortcutHint}>Qué te deben y qué debes</Text>
         </View>
         <Text style={s.shortcutArrow}>›</Text>
       </TouchableOpacity>
@@ -590,7 +590,7 @@ export default function DashboardScreen({ navigation }) {
 
       {reportLoading && !reportSummary ? (
         <View style={s.summaryLoadingCard}>
-          <ActivityIndicator color="#C487F6" />
+          <ActivityIndicator color={colors.primary} />
           <Text style={s.summaryLoadingText}>Actualizando el resumen de {selectedMonthLabel.toLowerCase()}...</Text>
         </View>
       ) : null}
@@ -612,12 +612,12 @@ export default function DashboardScreen({ navigation }) {
 
       <View style={s.grid}>
         <StatCard
-          label="Ingresos" value={totalIngresos} color="#10B981" icon="💰"
+          label="Ingresos" value={totalIngresos} color={colors.success} icon="💰"
           expanded={expandedDetail === 'income'}
           onPress={() => setExpandedDetail((p) => (p === 'income' ? null : 'income'))}
         />
         <StatCard
-          label="Gastos" value={totalGastos} color="#F87171" icon="💸"
+          label="Gastos" value={totalGastos} color={colors.danger} icon="💸"
           expanded={expandedDetail === 'expense'}
           onPress={() => setExpandedDetail((p) => (p === 'expense' ? null : 'expense'))}
         />
@@ -629,7 +629,7 @@ export default function DashboardScreen({ navigation }) {
           total={totalIngresos}
           items={incomeDetailItems}
           emptyLabel={`No tienes ingresos guardados en ${selectedMonthLabel.toLowerCase()}.`}
-          accent="#10B981"
+          accent={colors.success}
           showAll
         />
       ) : null}
@@ -639,7 +639,7 @@ export default function DashboardScreen({ navigation }) {
           total={totalGastos}
           items={expenseDetailItems}
           emptyLabel={`No tienes gastos guardados en ${selectedMonthLabel.toLowerCase()}.`}
-          accent="#F87171"
+          accent={colors.danger}
           showAll
         />
       ) : null}
@@ -943,41 +943,6 @@ const s = StyleSheet.create({
   ahorroBtnOff: { opacity: 0.4 },
   ahorroBtnText: { color: '#07131F', fontSize: 14, fontWeight: '800' },
   ahorroHint: { color: colors.textFaint, fontSize: 11, lineHeight: 15 },
-  heroCard: {
-    backgroundColor: 'rgba(196,135,246,0.08)',
-    borderRadius: 18,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(196,135,246,0.22)',
-  },
-  heroHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  heroLabel: { color: 'rgba(255,255,255,0.55)', fontSize: 13 },
-  heroBadge: {
-    color: colors.primary,
-    backgroundColor: 'rgba(196,135,246,0.12)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    fontSize: 11,
-    fontWeight: '700',
-    overflow: 'hidden',
-  },
-  heroBadgeFuture: {
-    color: '#FBBF24',
-    backgroundColor: 'rgba(251,191,36,0.12)',
-  },
-  heroValue: { fontSize: 34, fontWeight: '900', marginBottom: 4 },
-  heroSub: { color: 'rgba(255,255,255,0.42)', fontSize: 12, lineHeight: 18 },
-  availableCard: {
-    backgroundColor: 'rgba(15,23,42,0.92)',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  availableLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 12, marginBottom: 6, textTransform: 'uppercase' },
-  availableValue: { fontSize: 26, fontWeight: '900', marginBottom: 4 },
-  availableHint: { color: 'rgba(255,255,255,0.38)', fontSize: 12, lineHeight: 18 },
   summaryLoadingCard: {
     flexDirection: 'row',
     alignItems: 'center',

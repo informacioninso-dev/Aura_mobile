@@ -124,7 +124,7 @@ export default function FormModal({ visible, onClose, onSave, title, fields, ini
             </TouchableOpacity>
             <TouchableOpacity style={s.btnSave} onPress={handleSave} disabled={loading}>
               {loading
-                ? <ActivityIndicator color="#fff" />
+                ? <ActivityIndicator color={colors.text} />
                 : <Text style={s.btnSaveText}>Guardar</Text>}
             </TouchableOpacity>
           </View>

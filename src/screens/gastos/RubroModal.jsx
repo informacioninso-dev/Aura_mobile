@@ -159,14 +159,14 @@ export default function RubroModal({ visible, rubro, anio, mes, onClose, onChang
               />
               <TouchableOpacity style={s.btnSave} onPress={anadirCompra} disabled={saving}>
                 {saving
-                  ? <ActivityIndicator color="#fff" />
+                  ? <ActivityIndicator color={colors.text} />
                   : <Text style={s.btnSaveText}>+ Añadir compra</Text>}
               </TouchableOpacity>
             </View>
 
             <Text style={s.listTitle}>Compras de este mes</Text>
             {loading ? (
-              <ActivityIndicator color="#C487F6" style={{ marginVertical: 12 }} />
+              <ActivityIndicator color={colors.primary} style={{ marginVertical: 12 }} />
             ) : consumos.length === 0 ? (
               <Text style={s.empty}>Aún no añades compras. Cada compra suma al total del mes.</Text>
             ) : (

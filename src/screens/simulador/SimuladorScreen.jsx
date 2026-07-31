@@ -77,7 +77,7 @@ export default function SimuladorScreen() {
     setSimulado({ puntos, final: balance, plazo })
   }
 
-  if (loading) return <View style={s.center}><ActivityIndicator color="#C487F6" size="large" /></View>
+  if (loading) return <View style={s.center}><ActivityIndicator color={colors.primary} size="large" /></View>
 
   const chartData = simulado?.puntos || []
   const values = chartData.map((p) => p.balance)
@@ -87,7 +87,7 @@ export default function SimuladorScreen() {
 
   return (
     <ScrollView style={s.root} contentContainerStyle={[s.content, { paddingTop: topPad }]} keyboardShouldPersistTaps="handled">
-      <ScreenHeader title="Simulador" subtitle="Proyectá escenarios ajustando tus variables" />
+      <ScreenHeader title="Simulador" subtitle="Proyecta escenarios ajustando tus variables" />
 
       <View style={s.form}>
         <View style={s.row}>

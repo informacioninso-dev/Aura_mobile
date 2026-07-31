@@ -75,7 +75,7 @@ export default function PerfilScreen({ navigation }) {
             <TextInput style={s.input} placeholder="Confirmar nueva" placeholderTextColor="rgba(255,255,255,0.3)" secureTextEntry value={newPass2} onChangeText={setNewPass2} />
             {msg ? <Text style={[s.msg, { color: msg.startsWith('✅') ? colors.success : colors.danger }]}>{msg}</Text> : null}
             <TouchableOpacity style={s.btn} onPress={cambiarPassword} disabled={loading}>
-              {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>Guardar</Text>}
+              {loading ? <ActivityIndicator color={colors.text} /> : <Text style={s.btnText}>Guardar</Text>}
             </TouchableOpacity>
           </View>
         )}

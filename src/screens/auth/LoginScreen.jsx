@@ -113,7 +113,7 @@ export default function LoginScreen({ navigation }) {
 
         <TouchableOpacity style={s.btn} onPress={handleLogin} disabled={loading}>
           {loading
-            ? <ActivityIndicator color="#fff" />
+            ? <ActivityIndicator color={colors.text} />
             : <Text style={s.btnText}>Ingresar</Text>}
         </TouchableOpacity>
 

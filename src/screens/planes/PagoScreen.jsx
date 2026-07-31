@@ -72,7 +72,7 @@ export default function PagoScreen({ route, navigation }) {
           startInLoadingState
           renderLoading={() => (
             <View style={[s.root, s.center]}>
-              <ActivityIndicator color="#C487F6" size="large" />
+              <ActivityIndicator color={colors.primary} size="large" />
             </View>
           )}
           style={{ flex: 1, backgroundColor: colors.bg }}
@@ -84,7 +84,7 @@ export default function PagoScreen({ route, navigation }) {
   if (fase === 'verificando') {
     return (
       <View style={[s.root, s.center]}>
-        <ActivityIndicator color="#C487F6" size="large" />
+        <ActivityIndicator color={colors.primary} size="large" />
         <Text style={s.statusText}>Verificando pago...</Text>
       </View>
     )

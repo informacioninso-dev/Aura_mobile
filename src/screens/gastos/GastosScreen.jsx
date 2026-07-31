@@ -169,7 +169,7 @@ export default function GastosScreen({ route, navigation }) {
       <Text style={s.tabHint}>{TABS.find((t) => t.id === tab)?.hint}</Text>
 
       {loading
-        ? <View style={s.center}><ActivityIndicator color="#C487F6" /></View>
+        ? <View style={s.center}><ActivityIndicator color={colors.primary} /></View>
         : <FlatList
           data={data}
           keyExtractor={(item) => String(item.id)}

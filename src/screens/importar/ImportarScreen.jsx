@@ -231,7 +231,7 @@ export default function ImportarScreen() {
             disabled={cargando || seleccion.length === 0}
           >
             {cargando
-              ? <ActivityIndicator color="#fff" />
+              ? <ActivityIndicator color={colors.text} />
               : <Text style={s.primaryBtnText}>Importar {seleccion.length} filas</Text>}
           </TouchableOpacity>
         </View>
@@ -269,7 +269,7 @@ export default function ImportarScreen() {
         disabled={!archivo || cargando}
       >
         {cargando
-          ? <ActivityIndicator color="#fff" />
+          ? <ActivityIndicator color={colors.text} />
           : <Text style={s.primaryBtnText}>Subir y previsualizar</Text>}
       </TouchableOpacity>
     </View>

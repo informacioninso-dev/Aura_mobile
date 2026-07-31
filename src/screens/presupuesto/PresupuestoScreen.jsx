@@ -65,7 +65,7 @@ export default function PresupuestoScreen() {
       <ScreenHeader title="Presupuesto" subtitle="Límites mensuales por categoría" padded />
 
       {loading
-        ? <View style={s.center}><ActivityIndicator color="#C487F6" /></View>
+        ? <View style={s.center}><ActivityIndicator color={colors.primary} /></View>
         : <FlatList
           data={items}
           keyExtractor={(item) => String(item.id)}

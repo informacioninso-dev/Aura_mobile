@@ -71,7 +71,7 @@ export default function DeferidosScreen() {
       <ScreenHeader title="Gastos a cuotas" subtitle="Créditos y cuotas mensuales" padded />
 
       {loading
-        ? <View style={s.center}><ActivityIndicator color="#C487F6" /></View>
+        ? <View style={s.center}><ActivityIndicator color={colors.primary} /></View>
         : <FlatList
           data={items}
           keyExtractor={(item) => String(item.id)}

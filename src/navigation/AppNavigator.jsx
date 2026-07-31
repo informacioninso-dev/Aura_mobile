@@ -232,7 +232,7 @@ export default function AppNavigator() {
   if (loading) {
     return (
       <View style={loadingStyles.root}>
-        <ActivityIndicator color="#C487F6" size="large" />
+        <ActivityIndicator color={colors.primary} size="large" />
         <Text style={loadingStyles.title}>Aura</Text>
         <Text style={loadingStyles.subtitle}>Cargando tu sesión...</Text>
       </View>

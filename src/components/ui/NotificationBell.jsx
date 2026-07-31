@@ -73,7 +73,7 @@ export default function NotificationBell() {
 
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 380 }}>
               {loading ? (
-                <ActivityIndicator color="#C487F6" style={{ marginVertical: 24 }} />
+                <ActivityIndicator color={colors.primary} style={{ marginVertical: 24 }} />
               ) : notifs.length === 0 ? (
                 <Text style={s.empty}>Sin notificaciones 🎉</Text>
               ) : (

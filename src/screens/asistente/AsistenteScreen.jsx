@@ -80,8 +80,8 @@ export default function AsistenteScreen() {
       const { status, canAskAgain } = await Audio.requestPermissionsAsync()
       if (status !== 'granted') {
         setError(canAskAgain
-          ? 'Permiso de micrófono denegado. Intentá de nuevo.'
-          : 'Habilitá el micrófono en Configuración → Expo Go → Micrófono.')
+          ? 'Permiso de micrófono denegado. Intenta de nuevo.'
+          : 'Habilita el micrófono en Configuración → Expo Go → Micrófono.')
         return
       }
 
@@ -123,7 +123,7 @@ export default function AsistenteScreen() {
     try {
       const { data } = await api.post('/finanzas/asistente/parsear/', { texto })
       setParsed(data); setEdits({})
-    } catch (e) { setError(getApiErrorMessage(e, 'No pude entender. Intentá ser más específico.')) }
+    } catch (e) { setError(getApiErrorMessage(e, 'No pude entender. Intenta ser más específico.')) }
     finally { setCargando(false) }
   }
 
@@ -154,7 +154,7 @@ export default function AsistenteScreen() {
 
   return (
     <ScrollView style={s.root} contentContainerStyle={[s.content, { paddingTop: topPad }]} keyboardShouldPersistTaps="handled">
-      <ScreenHeader title="✨ Aura AI" subtitle="Hablá o escribí lo que pasó" accent />
+      <ScreenHeader title="✨ Aura AI" subtitle="Habla o escribe lo que pasó" accent />
 
       {!parsed ? (
         <>
@@ -167,19 +167,19 @@ export default function AsistenteScreen() {
                 disabled={transcribiendo}
               >
                 {transcribiendo
-                  ? <ActivityIndicator color="#fff" size="large" />
+                  ? <ActivityIndicator color={colors.text} size="large" />
                   : <Text style={s.micIcon}>{grabando ? '⏹' : '🎤'}</Text>
                 }
               </TouchableOpacity>
             </Animated.View>
             <Text style={s.micLabel}>
-              {transcribiendo ? 'Transcribiendo...' : grabando ? 'Tocá para detener' : 'Tocá para hablar'}
+              {transcribiendo ? 'Transcribiendo...' : grabando ? 'Toca para detener' : 'Toca para hablar'}
             </Text>
           </View>
 
           <View style={s.divider}>
             <View style={s.dividerLine} />
-            <Text style={s.dividerText}>o escribí</Text>
+            <Text style={s.dividerText}>o escribe</Text>
             <View style={s.dividerLine} />
           </View>
 
@@ -201,12 +201,12 @@ export default function AsistenteScreen() {
             onPress={parsear}
             disabled={!texto.trim() || cargando}
           >
-            {cargando ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>Analizar</Text>}
+            {cargando ? <ActivityIndicator color={colors.text} /> : <Text style={s.btnText}>Analizar</Text>}
           </TouchableOpacity>
         </>
       ) : (
         <>
-          <Text style={s.confirmLabel}>Revisá y editá si hace falta:</Text>
+          <Text style={s.confirmLabel}>Revisa y edita si hace falta:</Text>
           <View style={[s.card, { borderColor: esGasto ? 'rgba(248,113,113,0.3)' : 'rgba(16,185,129,0.3)' }]}>
             <Text style={[s.tipo, { color: esGasto ? colors.danger : colors.success }]}>{TIPO_LABELS[parsed.tipo]}</Text>
 
@@ -254,7 +254,7 @@ export default function AsistenteScreen() {
               <Text style={s.btnSecondaryText}>Volver</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[s.btn, s.btnFlex]} onPress={confirmar} disabled={guardando}>
-              {guardando ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>Confirmar</Text>}
+              {guardando ? <ActivityIndicator color={colors.text} /> : <Text style={s.btnText}>Confirmar</Text>}
             </TouchableOpacity>
           </View>
         </>

@@ -88,7 +88,7 @@ export default function ProjectionChart({
   if (isLoading) {
     return (
       <View style={s.loader}>
-        <ActivityIndicator color="#C487F6" />
+        <ActivityIndicator color={colors.primary} />
       </View>
     )
   }

@@ -54,7 +54,7 @@ export default function PlanesScreen({ navigation }) {
   if (loading) {
     return (
       <View style={[s.root, s.center]}>
-        <ActivityIndicator color="#C487F6" />
+        <ActivityIndicator color={colors.primary} />
       </View>
     )
   }
@@ -120,7 +120,7 @@ export default function PlanesScreen({ navigation }) {
                 disabled={pagando === plan.id}
               >
                 {pagando === plan.id
-                  ? <ActivityIndicator color="#fff" />
+                  ? <ActivityIndicator color={colors.text} />
                   : <Text style={s.btnText}>Contratar</Text>}
               </TouchableOpacity>
             )}

@@ -79,7 +79,7 @@ export default function CobrosScreen() {
       )}
 
       {loading
-        ? <View style={s.center}><ActivityIndicator color="#C487F6" /></View>
+        ? <View style={s.center}><ActivityIndicator color={colors.primary} /></View>
         : <FlatList
           data={data}
           keyExtractor={(item) => String(item.id)}
