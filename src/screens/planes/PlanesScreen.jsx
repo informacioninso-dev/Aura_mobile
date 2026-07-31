@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import api from '../../api/client'
 import { getApiErrorMessage } from '../../api/errors'
 import { formatMoney } from '../../utils/formatters'
+import { useTopInset } from '../../hooks/useTopInset'
 
 function featureLabel(feature) {
   if (feature.value_type === 'bool') return feature.value_bool ? feature.name : null
@@ -46,6 +47,7 @@ export default function PlanesScreen({ navigation }) {
   }
 
   const planActual = user?.plan?.slug
+  const topPad = useTopInset()
 
   if (loading) {
     return (
@@ -56,7 +58,7 @@ export default function PlanesScreen({ navigation }) {
   }
 
   return (
-    <ScrollView style={s.root} contentContainerStyle={{ padding: 16, paddingTop: 60, paddingBottom: 40 }}>
+    <ScrollView style={s.root} contentContainerStyle={{ padding: 16, paddingTop: topPad, paddingBottom: 40 }}>
       <Text style={s.title}>Planes</Text>
       <Text style={s.sub}>Elige el plan que mejor se adapte a tus necesidades.</Text>
 

@@ -49,46 +49,101 @@ const linking = {
 const PRIVACY_URL = 'https://aura.binnso.com/privacidad'
 const TERMS_URL = 'https://aura.binnso.com/terminos'
 
+// Agrupar por intención (Finanzas / Herramientas / Cuenta) da jerarquía y hace
+// más fácil encontrar cada cosa que una lista plana de 11 ítems.
+const MAS_SECCIONES = [
+  {
+    titulo: 'Finanzas',
+    items: [
+      { icon: '🛡️', label: 'Salud financiera', hint: 'Tu puntaje 0-100', screen: 'SaludFinanciera' },
+      { icon: '🎯', label: 'Presupuesto', hint: 'Límites por categoría', screen: 'Presupuesto' },
+      { icon: '🧩', label: 'Gastos a cuotas', hint: 'Diferidos y pagos', screen: 'Diferidos' },
+      { icon: '💳', label: 'Cuentas con personas', hint: 'Te deben / debes', screen: 'Cobros' },
+    ],
+  },
+  {
+    titulo: 'Herramientas',
+    items: [
+      { icon: '🔮', label: 'Simulador', hint: '¿Qué pasa si...?', screen: 'Simulador' },
+      { icon: '📥', label: 'Importar movimientos', hint: 'Desde tu banco', screen: 'Importar' },
+      { icon: '📄', label: 'Reportes', hint: 'Resúmenes y export', screen: 'Reportes' },
+    ],
+  },
+  {
+    titulo: 'Cuenta',
+    items: [
+      { icon: '⭐', label: 'Planes', hint: 'Mejora tu Aura', screen: 'Planes' },
+      { icon: '👤', label: 'Mi perfil', hint: 'Datos y sesión', screen: 'Perfil' },
+    ],
+  },
+]
+
 function MasMenu({ navigation }) {
-  const items = [
-    { icon: '🛡️', label: 'Salud financiera', screen: 'SaludFinanciera' },
-    { icon: '💳', label: 'Cuentas con personas', screen: 'Cobros' },
-    { icon: '🎯', label: 'Presupuesto', screen: 'Presupuesto' },
-    { icon: '🔮', label: 'Simulador', screen: 'Simulador' },
-    { icon: '🧩', label: 'Diferidos', screen: 'Diferidos' },
-    { icon: '📥', label: 'Importar movimientos', screen: 'Importar' },
-    { icon: '📄', label: 'Reportes', screen: 'Reportes' },
-    { icon: '⭐', label: 'Planes', screen: 'Planes' },
-    { icon: '👤', label: 'Mi perfil', screen: 'Perfil' },
-    { icon: '🔐', label: 'Aviso de Privacidad', url: PRIVACY_URL },
-    { icon: '📜', label: 'Términos de Uso', url: TERMS_URL },
-  ]
+  const insets = useSafeAreaInsets()
   return (
-    <ScrollView style={ms.root} contentContainerStyle={ms.content}>
+    <ScrollView style={ms.root} contentContainerStyle={[ms.content, { paddingTop: insets.top + 16 }]}>
       <Text style={ms.title}>Más</Text>
-      {items.map((item) => (
-        <TouchableOpacity
-          key={item.screen || item.url}
-          style={ms.item}
-          onPress={() => (item.url ? Linking.openURL(item.url) : navigation.navigate(item.screen))}
-        >
-          <Text style={ms.icon}>{item.icon}</Text>
-          <Text style={ms.label}>{item.label}</Text>
-          <Text style={ms.arrow}>{item.url ? '↗' : '›'}</Text>
-        </TouchableOpacity>
+      {MAS_SECCIONES.map((seccion) => (
+        <View key={seccion.titulo} style={ms.group}>
+          <Text style={ms.groupTitle}>{seccion.titulo}</Text>
+          <View style={ms.card}>
+            {seccion.items.map((item, i) => (
+              <TouchableOpacity
+                key={item.screen}
+                style={[ms.item, i > 0 && ms.itemBorder]}
+                activeOpacity={0.6}
+                onPress={() => navigation.navigate(item.screen)}
+              >
+                <Text style={ms.icon}>{item.icon}</Text>
+                <View style={ms.itemText}>
+                  <Text style={ms.label}>{item.label}</Text>
+                  {item.hint ? <Text style={ms.hint}>{item.hint}</Text> : null}
+                </View>
+                <Text style={ms.arrow}>›</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
       ))}
+
+      <View style={ms.legalRow}>
+        <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_URL)}>
+          <Text style={ms.legalLink}>Aviso de Privacidad</Text>
+        </TouchableOpacity>
+        <Text style={ms.legalDot}>·</Text>
+        <TouchableOpacity onPress={() => Linking.openURL(TERMS_URL)}>
+          <Text style={ms.legalLink}>Términos de Uso</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={{ height: insets.bottom + 24 }} />
     </ScrollView>
   )
 }
 
 const ms = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0F172A' },
-  content: { padding: 16, paddingTop: 60, gap: 8 },
-  title: { color: '#fff', fontSize: 22, fontWeight: '700', marginBottom: 16 },
-  item: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 14, padding: 16, gap: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)' },
-  icon: { fontSize: 22 },
-  label: { flex: 1, color: '#fff', fontSize: 16, fontWeight: '500' },
-  arrow: { color: 'rgba(255,255,255,0.3)', fontSize: 20 },
+  content: { paddingHorizontal: 16 },
+  title: { color: '#fff', fontSize: 26, fontWeight: '800', marginBottom: 20 },
+  group: { marginBottom: 22 },
+  groupTitle: {
+    color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: '700',
+    letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8, marginLeft: 4,
+  },
+  card: {
+    backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', overflow: 'hidden',
+  },
+  item: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, gap: 14 },
+  itemBorder: { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' },
+  icon: { fontSize: 22, width: 28, textAlign: 'center' },
+  itemText: { flex: 1 },
+  label: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  hint: { color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 2 },
+  arrow: { color: 'rgba(255,255,255,0.3)', fontSize: 22 },
+  legalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 },
+  legalLink: { color: 'rgba(255,255,255,0.45)', fontSize: 13, textDecorationLine: 'underline' },
+  legalDot: { color: 'rgba(255,255,255,0.3)', fontSize: 13 },
 })
 
 function MasNavigator() {
@@ -151,20 +206,21 @@ function MainTabs() {
           height: baseHeight + insets.bottom,
         },
         tabBarActiveTintColor: '#C487F6',
-        tabBarInactiveTintColor: 'rgba(255,255,255,0.35)',
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.4)',
         tabBarIcon: ({ focused }) => <TabIcon name={route.name} focused={focused} />,
-        tabBarLabelStyle: { fontSize: 11 },
+        tabBarLabelStyle: { fontSize: 10.5, fontWeight: '600', marginTop: 2 },
+        tabBarItemStyle: { paddingVertical: 4 },
       })}
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ tabBarLabel: 'Mi dinero' }} />
-      <Tab.Screen name="Ingresos" component={IngresosScreen} options={{ tabBarLabel: 'Lo que ganas' }} />
+      <Tab.Screen name="Ingresos" component={IngresosScreen} options={{ tabBarLabel: 'Lo ganado' }} />
       <Tab.Screen name="Aura" component={AsistenteScreen}
         options={{
           tabBarLabel: 'Aura AI',
           tabBarButton: (props) => <AuraTabButton {...props} />,
         }}
       />
-      <Tab.Screen name="Gastos" component={GastosScreen} options={{ tabBarLabel: 'Lo que gastas' }} />
+      <Tab.Screen name="Gastos" component={GastosScreen} options={{ tabBarLabel: 'Lo gastado' }} />
       <Tab.Screen name="Más" component={MasNavigator} />
     </Tab.Navigator>
   )

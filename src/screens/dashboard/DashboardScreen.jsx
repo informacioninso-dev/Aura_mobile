@@ -18,6 +18,7 @@ import ProjectionChart from '../../components/ui/ProjectionChart'
 import NotificationBell from '../../components/ui/NotificationBell'
 import SaludFinancieraCard from '../../components/ui/SaludFinancieraCard'
 import { getApiErrorMessage } from '../../api/errors'
+import { useTopInset } from '../../hooks/useTopInset'
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
@@ -465,6 +466,7 @@ export default function DashboardScreen({ navigation }) {
   const projLast = projection?.series?.length ? projection.series[projection.series.length - 1] : null
   const projCierre = Number(projLast?.closing_balance ?? 0)
   const esModoSimple = projection?.projection_mode === 'simple'
+  const topPad = useTopInset()
 
   if (loading && reportLoading) {
     return (
@@ -478,7 +480,7 @@ export default function DashboardScreen({ navigation }) {
   return (
     <ScrollView
       style={s.root}
-      contentContainerStyle={s.content}
+      contentContainerStyle={[s.content, { paddingTop: topPad }]}
       refreshControl={(
         <RefreshControl
           refreshing={refreshing}
@@ -855,7 +857,7 @@ function DetailCard({ title, total, items, emptyLabel, accent, showAll }) {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0F172A' },
-  content: { padding: 16, paddingTop: 56, paddingBottom: 40, gap: 12 },
+  content: { padding: 16, paddingBottom: 40, gap: 12 },
   loaderScreen: {
     flex: 1,
     backgroundColor: '#0F172A',

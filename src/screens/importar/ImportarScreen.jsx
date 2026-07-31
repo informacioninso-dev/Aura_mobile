@@ -6,6 +6,7 @@ import { File, Paths } from 'expo-file-system'
 import api from '../../api/client'
 import { getApiErrorMessage } from '../../api/errors'
 import { formatMoney, formatDate } from '../../utils/formatters'
+import { useTopInset } from '../../hooks/useTopInset'
 
 const TEMPLATE_CSV = `fecha,descripcion,monto,tipo,categoria
 2025-12-01,Sueldo diciembre,1500000,ingreso,
@@ -134,6 +135,8 @@ export default function ImportarScreen() {
     setError('')
   }
 
+  const topPad = useTopInset()
+
   if (fase === 'confirmado' && resultado) {
     return (
       <View style={[s.root, s.center]}>
@@ -164,7 +167,7 @@ export default function ImportarScreen() {
     const todoSeleccionado = seleccion.length === preview.filas_ok.length && preview.filas_ok.length > 0
 
     return (
-      <View style={s.root}>
+      <View style={[s.root, { paddingTop: topPad }]}>
         <FlatList
           data={preview.filas_ok}
           keyExtractor={(_, index) => String(index)}
@@ -273,7 +276,7 @@ export default function ImportarScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F172A', paddingTop: 60, paddingHorizontal: 16 },
+  root: { flex: 1, backgroundColor: '#0F172A', paddingHorizontal: 16 },
   center: { justifyContent: 'center', alignItems: 'center', gap: 12, paddingHorizontal: 32 },
   title: { color: '#fff', fontSize: 22, fontWeight: '700', marginBottom: 2 },
   sub: { color: 'rgba(255,255,255,0.35)', fontSize: 13, marginBottom: 16 },

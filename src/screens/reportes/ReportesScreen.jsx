@@ -5,6 +5,7 @@ import { File, Paths } from 'expo-file-system'
 import api from '../../api/client'
 import { getApiErrorMessage } from '../../api/errors'
 import { formatMoney } from '../../utils/formatters'
+import { useTopInset } from '../../hooks/useTopInset'
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
@@ -143,9 +144,10 @@ export default function ReportesScreen() {
   }
 
   const balanceColor = data ? (data.resumen.balance >= 0 ? '#10B981' : '#F87171') : '#fff'
+  const topPad = useTopInset()
 
   return (
-    <ScrollView style={s.root} contentContainerStyle={{ padding: 16, paddingTop: 60, paddingBottom: 60 }}>
+    <ScrollView style={s.root} contentContainerStyle={{ padding: 16, paddingTop: topPad, paddingBottom: 60 }}>
       <Text style={s.title}>Reportes</Text>
       <Text style={s.sub}>Así se movió tu mes</Text>
 

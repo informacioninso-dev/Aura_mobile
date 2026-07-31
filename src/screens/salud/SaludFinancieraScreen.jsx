@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
 } from 'react-native'
 import Svg, { Circle } from 'react-native-svg'
+import { useTopInset } from '../../hooks/useTopInset'
 
 import api from '../../api/client'
 import { useAuth } from '../../context/AuthContext'
@@ -123,10 +124,12 @@ export default function SaludFinancieraScreen() {
     })
   }
 
+  const topPad = useTopInset()
+
   // Plan sin la feature: se explica en vez de mostrar una pantalla vacia.
   if (!habilitado) {
     return (
-      <View style={s.root}>
+      <View style={[s.root, { paddingTop: topPad }]}>
         <Text style={s.title}>Salud financiera</Text>
         <View style={s.lockedCard}>
           <Text style={s.lockedIcon}>🔒</Text>
@@ -145,7 +148,7 @@ export default function SaludFinancieraScreen() {
   const esMesActual = periodo.anio === hoy.getFullYear() && periodo.mes === hoy.getMonth() + 1
 
   return (
-    <View style={s.root}>
+    <View style={[s.root, { paddingTop: topPad }]}>
       <Text style={s.title}>Salud financiera</Text>
 
       <View style={s.monthNav}>
@@ -223,7 +226,7 @@ export default function SaludFinancieraScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F172A', paddingTop: 60 },
+  root: { flex: 1, backgroundColor: '#0F172A' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   title: { color: '#fff', fontSize: 22, fontWeight: '700', paddingHorizontal: 16, marginBottom: 12 },
 

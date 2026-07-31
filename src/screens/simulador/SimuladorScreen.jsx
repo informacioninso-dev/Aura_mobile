@@ -3,6 +3,7 @@ import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TextInput, Touch
 import Svg, { Polyline, Line, Text as SvgText } from 'react-native-svg'
 import api from '../../api/client'
 import { formatMoney } from '../../utils/formatters'
+import { useTopInset } from '../../hooks/useTopInset'
 
 const SCREEN_W = Dimensions.get('window').width
 const CW = SCREEN_W - 64
@@ -80,9 +81,10 @@ export default function SimuladorScreen() {
   const values = chartData.map((p) => p.balance)
   const labels = chartData.map((p) => p.mes)
   const finalPositivo = simulado ? simulado.final >= 0 : true
+  const topPad = useTopInset()
 
   return (
-    <ScrollView style={s.root} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
+    <ScrollView style={s.root} contentContainerStyle={[s.content, { paddingTop: topPad }]} keyboardShouldPersistTaps="handled">
       <Text style={s.title}>Simulador</Text>
       <Text style={s.sub}>Proyectá escenarios ajustando tus variables</Text>
 
@@ -147,7 +149,7 @@ export default function SimuladorScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0F172A' },
-  content: { padding: 16, paddingTop: 60, paddingBottom: 40 },
+  content: { padding: 16, paddingBottom: 40 },
   center: { flex: 1, backgroundColor: '#0F172A', justifyContent: 'center', alignItems: 'center' },
   title: { color: '#fff', fontSize: 22, fontWeight: '700', marginBottom: 2 },
   sub: { color: 'rgba(255,255,255,0.35)', fontSize: 13, marginBottom: 20 },

@@ -6,6 +6,7 @@ import { formatMoney } from '../../utils/formatters'
 import FormModal from '../../components/ui/FormModal'
 import SwipeableRow from '../../components/ui/SwipeableRow'
 import RubroModal from './RubroModal'
+import { useTopInset } from '../../hooks/useTopInset'
 
 const FREQ = { diario: 'Diario', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual', bimestral: 'Bimestral', trimestral: 'Trimestral', semestral: 'Semestral', anual: 'Anual' }
 
@@ -149,9 +150,10 @@ export default function GastosScreen({ route, navigation }) {
   const data = tab === 'fijos' ? fijos : tab === 'variables' ? variables : puntuales
   const { fields, titulo } = CONFIG_TAB[tab]
   const esVariable = tab === 'variables'
+  const topPad = useTopInset()
 
   return (
-    <GestureHandlerRootView style={s.root}>
+    <GestureHandlerRootView style={[s.root, { paddingTop: topPad }]}>
       <Text style={s.title}>Lo que gastas</Text>
 
       <View style={s.tabs}>
@@ -235,7 +237,7 @@ export default function GastosScreen({ route, navigation }) {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F172A', paddingTop: 60 },
+  root: { flex: 1, backgroundColor: '#0F172A' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { color: '#fff', fontSize: 22, fontWeight: '700', paddingHorizontal: 16, marginBottom: 16 },
   tabs: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 6, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: 4 },

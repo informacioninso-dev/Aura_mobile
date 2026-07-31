@@ -4,6 +4,7 @@ import { WebView } from 'react-native-webview'
 import api from '../../api/client'
 import { getApiErrorMessage } from '../../api/errors'
 import { useAuth } from '../../context/AuthContext'
+import { useTopInset } from '../../hooks/useTopInset'
 
 function extraerParams(url) {
   const queryIndex = url.indexOf('?')
@@ -53,10 +54,12 @@ export default function PagoScreen({ route, navigation }) {
     }
   }
 
+  const topPad = useTopInset()
+
   if (fase === 'pago') {
     return (
       <View style={s.root}>
-        <View style={s.header}>
+        <View style={[s.header, { paddingTop: topPad }]}>
           <Text style={s.headerTitle}>Pago seguro</Text>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={s.headerClose}>✕</Text>
@@ -131,7 +134,7 @@ const s = StyleSheet.create({
   center: { justifyContent: 'center', alignItems: 'center', gap: 14, paddingHorizontal: 32 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingTop: 50, paddingHorizontal: 16, paddingBottom: 12,
+    paddingHorizontal: 16, paddingBottom: 12,
     borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   headerTitle: { color: '#fff', fontWeight: '700', fontSize: 16 },

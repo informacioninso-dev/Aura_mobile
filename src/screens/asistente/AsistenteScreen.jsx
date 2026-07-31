@@ -6,6 +6,7 @@ import {
 import { Audio } from 'expo-av'
 import api from '../../api/client'
 import { getApiErrorMessage } from '../../api/errors'
+import { useTopInset } from '../../hooks/useTopInset'
 
 const TIPO_LABELS = { ingreso_fijo: 'Ingreso fijo', ingreso_puntual: 'Ingreso puntual', gasto_fijo: 'Gasto fijo', gasto_variable: 'Gasto variable', gasto_puntual: 'Gasto puntual' }
 // Los gastos variables viven en el mismo endpoint que los fijos; los distingue tipo_monto.
@@ -140,6 +141,7 @@ export default function AsistenteScreen() {
 
   const esGasto = TIPOS_GASTO.includes(parsed?.tipo)
   const esFijo = TIPOS_RECURRENTES.includes(parsed?.tipo)
+  const topPad = useTopInset()
 
   if (exito) return (
     <View style={[s.root, s.center]}>
@@ -149,7 +151,7 @@ export default function AsistenteScreen() {
   )
 
   return (
-    <ScrollView style={s.root} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
+    <ScrollView style={s.root} contentContainerStyle={[s.content, { paddingTop: topPad }]} keyboardShouldPersistTaps="handled">
       <Text style={s.title}>✨ Aura AI</Text>
       <Text style={s.sub}>Hablá o escribí lo que pasó</Text>
 
@@ -262,7 +264,7 @@ export default function AsistenteScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0F172A' },
-  content: { padding: 20, paddingTop: 60, paddingBottom: 40 },
+  content: { padding: 20, paddingBottom: 40 },
   center: { justifyContent: 'center', alignItems: 'center' },
   title: { color: '#C487F6', fontSize: 24, fontWeight: '800', marginBottom: 4 },
   sub: { color: 'rgba(255,255,255,0.4)', fontSize: 14, marginBottom: 28 },

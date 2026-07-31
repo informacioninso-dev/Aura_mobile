@@ -5,6 +5,7 @@ import api from '../../api/client'
 import { formatMoney } from '../../utils/formatters'
 import FormModal from '../../components/ui/FormModal'
 import SwipeableRow from '../../components/ui/SwipeableRow'
+import { useTopInset } from '../../hooks/useTopInset'
 
 const FIELDS = [
   { key: 'descripcion', label: 'Descripción', type: 'text', placeholder: 'Ej: Crédito auto' },
@@ -61,10 +62,11 @@ export default function DeferidosScreen() {
 
   const hoy = new Date().toISOString().slice(0, 10)
   const defaults = { categoria: 'deudas', fecha_inicio: hoy, fecha_fin: '', activo: true }
+  const topPad = useTopInset()
 
   return (
-    <GestureHandlerRootView style={s.root}>
-      <Text style={s.title}>Diferidos</Text>
+    <GestureHandlerRootView style={[s.root, { paddingTop: topPad }]}>
+      <Text style={s.title}>Gastos a cuotas</Text>
       <Text style={s.sub}>Créditos y cuotas mensuales</Text>
 
       {loading
@@ -110,7 +112,7 @@ export default function DeferidosScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F172A', paddingTop: 60 },
+  root: { flex: 1, backgroundColor: '#0F172A' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { color: '#fff', fontSize: 22, fontWeight: '700', paddingHorizontal: 16, marginBottom: 2 },
   sub: { color: 'rgba(255,255,255,0.35)', fontSize: 13, paddingHorizontal: 16, marginBottom: 16 },

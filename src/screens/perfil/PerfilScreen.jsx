@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import api from '../../api/client'
 import { getApiErrorMessage } from '../../api/errors'
 import { useBiometrics } from '../../hooks/useBiometrics'
+import { useTopInset } from '../../hooks/useTopInset'
 
 export default function PerfilScreen({ navigation }) {
   const { user, logout } = useAuth()
@@ -30,9 +31,10 @@ export default function PerfilScreen({ navigation }) {
 
   const plan = user?.plan?.name || 'Gratuito'
   const planColor = plan.toLowerCase().includes('pro') ? '#C487F6' : 'rgba(255,255,255,0.4)'
+  const topPad = useTopInset()
 
   return (
-    <ScrollView style={s.root} contentContainerStyle={s.content}>
+    <ScrollView style={s.root} contentContainerStyle={[s.content, { paddingTop: topPad }]}>
       <Text style={s.title}>Mi perfil</Text>
 
       {/* Avatar */}
@@ -102,7 +104,7 @@ function MenuItem({ icon, label, onPress, active }) {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0F172A' },
-  content: { padding: 16, paddingTop: 60, paddingBottom: 40, alignItems: 'center' },
+  content: { padding: 16, paddingBottom: 40, alignItems: 'center' },
   title: { color: '#fff', fontSize: 22, fontWeight: '700', marginBottom: 24, alignSelf: 'flex-start' },
   avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#8B5CF6', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
   avatarText: { color: '#fff', fontSize: 32, fontWeight: '700' },
