@@ -10,6 +10,7 @@ import {
 } from 'react-native'
 import Svg, { Circle } from 'react-native-svg'
 import { useTopInset } from '../../hooks/useTopInset'
+import ScreenHeader from '../../components/ui/ScreenHeader'
 
 import api from '../../api/client'
 import { useAuth } from '../../context/AuthContext'
@@ -130,7 +131,7 @@ export default function SaludFinancieraScreen() {
   if (!habilitado) {
     return (
       <View style={[s.root, { paddingTop: topPad }]}>
-        <Text style={s.title}>Salud financiera</Text>
+        <ScreenHeader title="Salud financiera" padded />
         <View style={s.lockedCard}>
           <Text style={s.lockedIcon}>🔒</Text>
           <Text style={s.lockedTitle}>Disponible en el plan Pro</Text>
@@ -149,7 +150,7 @@ export default function SaludFinancieraScreen() {
 
   return (
     <View style={[s.root, { paddingTop: topPad }]}>
-      <Text style={s.title}>Salud financiera</Text>
+      <ScreenHeader title="Salud financiera" padded />
 
       <View style={s.monthNav}>
         <TouchableOpacity style={s.monthBtn} onPress={() => moverMes(-1)}>
@@ -228,7 +229,6 @@ export default function SaludFinancieraScreen() {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0F172A' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  title: { color: '#fff', fontSize: 22, fontWeight: '700', paddingHorizontal: 16, marginBottom: 16 },
 
   monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 4 },
   monthBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center' },

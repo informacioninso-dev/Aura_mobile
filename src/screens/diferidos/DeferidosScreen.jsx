@@ -6,6 +6,7 @@ import { formatMoney } from '../../utils/formatters'
 import FormModal from '../../components/ui/FormModal'
 import SwipeableRow from '../../components/ui/SwipeableRow'
 import { useTopInset } from '../../hooks/useTopInset'
+import ScreenHeader from '../../components/ui/ScreenHeader'
 
 const FIELDS = [
   { key: 'descripcion', label: 'Descripción', type: 'text', placeholder: 'Ej: Crédito auto' },
@@ -66,8 +67,7 @@ export default function DeferidosScreen() {
 
   return (
     <GestureHandlerRootView style={[s.root, { paddingTop: topPad }]}>
-      <Text style={s.title}>Gastos a cuotas</Text>
-      <Text style={s.sub}>Créditos y cuotas mensuales</Text>
+      <ScreenHeader title="Gastos a cuotas" subtitle="Créditos y cuotas mensuales" padded />
 
       {loading
         ? <View style={s.center}><ActivityIndicator color="#C487F6" /></View>
@@ -114,8 +114,6 @@ export default function DeferidosScreen() {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0F172A' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { color: '#fff', fontSize: 22, fontWeight: '700', paddingHorizontal: 16, marginBottom: 2 },
-  sub: { color: 'rgba(255,255,255,0.35)', fontSize: 13, paddingHorizontal: 16, marginBottom: 16 },
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: 'rgba(196,135,246,0.2)' },
   desc: { color: '#fff', fontSize: 15, fontWeight: '600' },
   meta: { color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 2 },

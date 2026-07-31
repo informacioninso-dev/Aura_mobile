@@ -7,6 +7,7 @@ import { Audio } from 'expo-av'
 import api from '../../api/client'
 import { getApiErrorMessage } from '../../api/errors'
 import { useTopInset } from '../../hooks/useTopInset'
+import ScreenHeader from '../../components/ui/ScreenHeader'
 
 const TIPO_LABELS = { ingreso_fijo: 'Ingreso fijo', ingreso_puntual: 'Ingreso puntual', gasto_fijo: 'Gasto fijo', gasto_variable: 'Gasto variable', gasto_puntual: 'Gasto puntual' }
 // Los gastos variables viven en el mismo endpoint que los fijos; los distingue tipo_monto.
@@ -152,8 +153,7 @@ export default function AsistenteScreen() {
 
   return (
     <ScrollView style={s.root} contentContainerStyle={[s.content, { paddingTop: topPad }]} keyboardShouldPersistTaps="handled">
-      <Text style={s.title}>✨ Aura AI</Text>
-      <Text style={s.sub}>Hablá o escribí lo que pasó</Text>
+      <ScreenHeader title="✨ Aura AI" subtitle="Hablá o escribí lo que pasó" accent />
 
       {!parsed ? (
         <>
@@ -266,8 +266,6 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0F172A' },
   content: { padding: 20, paddingBottom: 40 },
   center: { justifyContent: 'center', alignItems: 'center' },
-  title: { color: '#C487F6', fontSize: 24, fontWeight: '800', marginBottom: 4 },
-  sub: { color: 'rgba(255,255,255,0.35)', fontSize: 13, marginBottom: 16 },
   micSection: { alignItems: 'center', marginBottom: 24, gap: 12 },
   micBtn: { width: 88, height: 88, borderRadius: 44, backgroundColor: 'rgba(139,92,246,0.2)', borderWidth: 2, borderColor: '#8B5CF6', justifyContent: 'center', alignItems: 'center' },
   micBtnActive: { backgroundColor: 'rgba(248,113,113,0.2)', borderColor: '#F87171' },

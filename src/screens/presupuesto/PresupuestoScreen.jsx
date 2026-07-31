@@ -6,6 +6,7 @@ import { formatMoney } from '../../utils/formatters'
 import FormModal from '../../components/ui/FormModal'
 import SwipeableRow from '../../components/ui/SwipeableRow'
 import { useTopInset } from '../../hooks/useTopInset'
+import ScreenHeader from '../../components/ui/ScreenHeader'
 
 const FIELDS = [
   { key: 'nombre', label: 'Categoría', type: 'chips' },
@@ -60,8 +61,7 @@ export default function PresupuestoScreen() {
 
   return (
     <GestureHandlerRootView style={[s.root, { paddingTop: topPad }]}>
-      <Text style={s.title}>Presupuesto</Text>
-      <Text style={s.sub}>Límites mensuales por categoría</Text>
+      <ScreenHeader title="Presupuesto" subtitle="Límites mensuales por categoría" padded />
 
       {loading
         ? <View style={s.center}><ActivityIndicator color="#C487F6" /></View>
@@ -120,8 +120,6 @@ export default function PresupuestoScreen() {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0F172A' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { color: '#fff', fontSize: 22, fontWeight: '700', paddingHorizontal: 16, marginBottom: 2 },
-  sub: { color: 'rgba(255,255,255,0.35)', fontSize: 13, paddingHorizontal: 16, marginBottom: 16 },
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', gap: 12 },
   icono: { fontSize: 22 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },

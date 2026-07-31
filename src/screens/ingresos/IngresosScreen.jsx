@@ -6,6 +6,7 @@ import { formatMoney } from '../../utils/formatters'
 import FormModal from '../../components/ui/FormModal'
 import SwipeableRow from '../../components/ui/SwipeableRow'
 import { useTopInset } from '../../hooks/useTopInset'
+import ScreenHeader from '../../components/ui/ScreenHeader'
 
 const FREQ = { diario: 'Diario', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual', bimestral: 'Bimestral', trimestral: 'Trimestral', semestral: 'Semestral', anual: 'Anual' }
 
@@ -94,7 +95,7 @@ export default function IngresosScreen({ route, navigation }) {
 
   return (
     <GestureHandlerRootView style={[s.root, { paddingTop: topPad }]}>
-      <Text style={s.title}>Lo que ganas</Text>
+      <ScreenHeader title="Lo que ganas" padded />
 
       <View style={s.tabs}>
         {['fijos', 'puntuales'].map((t) => (
@@ -145,7 +146,6 @@ export default function IngresosScreen({ route, navigation }) {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0F172A' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { color: '#fff', fontSize: 22, fontWeight: '700', paddingHorizontal: 16, marginBottom: 16 },
   tabs: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 8, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: 4 },
   tab: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
   tabActive: { backgroundColor: '#8B5CF6' },

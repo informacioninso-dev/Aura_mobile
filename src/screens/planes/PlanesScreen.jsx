@@ -5,6 +5,7 @@ import api from '../../api/client'
 import { getApiErrorMessage } from '../../api/errors'
 import { formatMoney } from '../../utils/formatters'
 import { useTopInset } from '../../hooks/useTopInset'
+import ScreenHeader from '../../components/ui/ScreenHeader'
 
 function featureLabel(feature) {
   if (feature.value_type === 'bool') return feature.value_bool ? feature.name : null
@@ -59,8 +60,7 @@ export default function PlanesScreen({ navigation }) {
 
   return (
     <ScrollView style={s.root} contentContainerStyle={{ padding: 16, paddingTop: topPad, paddingBottom: 40 }}>
-      <Text style={s.title}>Planes</Text>
-      <Text style={s.sub}>Elige el plan que mejor se adapte a tus necesidades.</Text>
+      <ScreenHeader title="Planes" subtitle="Elige el plan que mejor se adapte a tus necesidades." />
 
       {!!error && <Text style={s.errorMsg}>{error}</Text>}
 
@@ -133,8 +133,6 @@ export default function PlanesScreen({ navigation }) {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0F172A' },
   center: { justifyContent: 'center', alignItems: 'center' },
-  title: { color: '#fff', fontSize: 22, fontWeight: '700', marginBottom: 2 },
-  sub: { color: 'rgba(255,255,255,0.35)', fontSize: 13, marginBottom: 16 },
   errorMsg: { color: '#F87171', fontSize: 13, marginBottom: 12, textAlign: 'center' },
   card: {
     backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 18, padding: 20,

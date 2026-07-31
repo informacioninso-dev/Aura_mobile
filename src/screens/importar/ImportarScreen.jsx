@@ -7,6 +7,7 @@ import api from '../../api/client'
 import { getApiErrorMessage } from '../../api/errors'
 import { formatMoney, formatDate } from '../../utils/formatters'
 import { useTopInset } from '../../hooks/useTopInset'
+import ScreenHeader from '../../components/ui/ScreenHeader'
 
 const TEMPLATE_CSV = `fecha,descripcion,monto,tipo,categoria
 2025-12-01,Sueldo diciembre,1500000,ingreso,
@@ -238,9 +239,8 @@ export default function ImportarScreen() {
   }
 
   return (
-    <View style={s.root}>
-      <Text style={s.title}>Importar movimientos</Text>
-      <Text style={s.sub}>Sube tu estado de cuenta o tu planilla de movimientos en Excel o CSV.</Text>
+    <View style={[s.root, { paddingTop: topPad }]}>
+      <ScreenHeader title="Importar movimientos" subtitle="Sube tu estado de cuenta o tu planilla de movimientos en Excel o CSV." />
 
       <TouchableOpacity style={s.card} onPress={descargarPlantilla}>
         <Text style={s.cardIcon}>📄</Text>

@@ -6,6 +6,7 @@ import api from '../../api/client'
 import { getApiErrorMessage } from '../../api/errors'
 import { formatMoney } from '../../utils/formatters'
 import { useTopInset } from '../../hooks/useTopInset'
+import ScreenHeader from '../../components/ui/ScreenHeader'
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
@@ -148,8 +149,7 @@ export default function ReportesScreen() {
 
   return (
     <ScrollView style={s.root} contentContainerStyle={{ padding: 16, paddingTop: topPad, paddingBottom: 60 }}>
-      <Text style={s.title}>Reportes</Text>
-      <Text style={s.sub}>Así se movió tu mes</Text>
+      <ScreenHeader title="Reportes" subtitle="Así se movió tu mes" />
 
       <View style={s.monthSwitcher}>
         <TouchableOpacity style={s.monthNavBtn} onPress={() => setSelectedMonth((cur) => addMonths(cur, -1))}>
@@ -258,8 +258,6 @@ export default function ReportesScreen() {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0F172A' },
   center: { paddingVertical: 40, alignItems: 'center' },
-  title: { color: '#fff', fontSize: 22, fontWeight: '700', marginBottom: 2 },
-  sub: { color: 'rgba(255,255,255,0.35)', fontSize: 13, marginBottom: 16 },
   monthSwitcher: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 16,

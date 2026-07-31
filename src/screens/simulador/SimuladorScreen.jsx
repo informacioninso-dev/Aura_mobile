@@ -4,6 +4,7 @@ import Svg, { Polyline, Line, Text as SvgText } from 'react-native-svg'
 import api from '../../api/client'
 import { formatMoney } from '../../utils/formatters'
 import { useTopInset } from '../../hooks/useTopInset'
+import ScreenHeader from '../../components/ui/ScreenHeader'
 
 const SCREEN_W = Dimensions.get('window').width
 const CW = SCREEN_W - 64
@@ -85,8 +86,7 @@ export default function SimuladorScreen() {
 
   return (
     <ScrollView style={s.root} contentContainerStyle={[s.content, { paddingTop: topPad }]} keyboardShouldPersistTaps="handled">
-      <Text style={s.title}>Simulador</Text>
-      <Text style={s.sub}>Proyectá escenarios ajustando tus variables</Text>
+      <ScreenHeader title="Simulador" subtitle="Proyectá escenarios ajustando tus variables" />
 
       <View style={s.form}>
         <View style={s.row}>
@@ -151,8 +151,6 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0F172A' },
   content: { padding: 16, paddingBottom: 40 },
   center: { flex: 1, backgroundColor: '#0F172A', justifyContent: 'center', alignItems: 'center' },
-  title: { color: '#fff', fontSize: 22, fontWeight: '700', marginBottom: 2 },
-  sub: { color: 'rgba(255,255,255,0.35)', fontSize: 13, marginBottom: 16 },
   form: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', gap: 12 },
   row: { flexDirection: 'row', gap: 12 },
   fieldHalf: { flex: 1 },
