@@ -87,10 +87,12 @@ function occursInMonth(item, monthDate, dateField = 'fecha') {
   return targetDate >= monthStart && targetDate <= monthEnd
 }
 
-// Un rubro variable con consumos registrados en el mes vale su gasto real; el
-// estimado solo aplica mientras no haya consumos. El backend entrega
-// monto_real_mes solo para el mes consultado (null en el resto).
+// Un rubro variable vale su gasto REAL del mes; si sigue pendiente (sin
+// registrar) cuenta como 0, igual que en la pantalla de Gastos variables, para
+// que el total del dashboard cuadre con esa vista. Los fijos siempre valen su
+// monto. El backend entrega monto_real_mes solo para el mes consultado.
 function montoDelMes(item) {
+  if (item?.tipo_monto === 'variable') return item?.monto_real_mes ?? 0
   return item?.monto_real_mes ?? item?.monto
 }
 

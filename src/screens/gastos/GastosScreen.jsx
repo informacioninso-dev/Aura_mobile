@@ -5,6 +5,7 @@ import api from '../../api/client'
 import { formatMoney } from '../../utils/formatters'
 import FormModal from '../../components/ui/FormModal'
 import SwipeableRow from '../../components/ui/SwipeableRow'
+import RubroModal from './RubroModal'
 
 const FREQ = { diario: 'Diario', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual', bimestral: 'Bimestral', trimestral: 'Trimestral', semestral: 'Semestral', anual: 'Anual' }
 
@@ -16,12 +17,12 @@ const FIELDS_FIJO = [
   { key: 'fecha_inicio', label: 'Fecha inicio', type: 'date' },
 ]
 
+// Un rubro variable se crea solo con nombre + categoria: el monto de cada mes
+// se registra despues como compras (consumos). El estimado lo aprende del
+// historial, no se pide a mano.
 const FIELDS_VARIABLE = [
-  { key: 'descripcion', label: 'Descripción', type: 'text', placeholder: 'Ej: Luz, agua, gasolina' },
-  { key: 'monto', label: 'Monto estimado', type: 'number', placeholder: '0.00' },
+  { key: 'descripcion', label: '¿En qué se va?', type: 'text', placeholder: 'Ej: Farmacia, súper, gasolina' },
   { key: 'categoria', label: 'Categoría', type: 'chips' },
-  { key: 'frecuencia', label: 'Frecuencia', type: 'chips' },
-  { key: 'fecha_inicio', label: 'Fecha inicio', type: 'date' },
 ]
 
 const FIELDS_PUNTUAL = [
@@ -31,12 +32,6 @@ const FIELDS_PUNTUAL = [
   { key: 'fecha', label: 'Fecha', type: 'date' },
 ]
 
-const FIELDS_MONTO_REAL = [
-  { key: 'monto_real', label: '¿Cuánto pagaste?', type: 'number', placeholder: '0.00' },
-]
-
-// Un gasto variable se repite igual que un fijo, pero su monto es un estimado
-// que se reemplaza con lo que el usuario realmente paga cada mes.
 const TABS = [
   { id: 'fijos', label: 'Fijos', hint: 'Mismo monto siempre' },
   { id: 'variables', label: 'Variables', hint: 'El monto cambia' },
@@ -56,14 +51,18 @@ export default function GastosScreen({ route, navigation }) {
   const [tab, setTab] = useState(route?.params?.tab || 'fijos')
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState({ visible: false, item: null })
-  const [realModal, setRealModal] = useState({ visible: false, item: null })
+  const [rubroModal, setRubroModal] = useState({ visible: false, rubro: null })
   const [saving, setSaving] = useState(false)
+
+  // Los rubros variables se registran por mes; se trabaja el mes en curso.
+  const hoy = new Date()
+  const anioMes = { anio: hoy.getFullYear(), mes: hoy.getMonth() + 1 }
 
   const cargar = useCallback(() => {
     setLoading(true)
     Promise.all([
       api.get('/finanzas/gastos-corrientes/?tipo_monto=fijo'),
-      api.get('/finanzas/gastos-corrientes/?tipo_monto=variable'),
+      api.get(`/finanzas/gastos-corrientes/resumen_variables/?anio=${hoy.getFullYear()}&mes=${hoy.getMonth() + 1}`),
       api.get('/finanzas/gastos-no-corrientes/'),
     ])
       .then(([f, v, p]) => {
@@ -72,6 +71,7 @@ export default function GastosScreen({ route, navigation }) {
         setPuntuales(p.data.results ?? p.data)
       })
       .finally(() => setLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => { cargar() }, [cargar])
@@ -105,8 +105,25 @@ export default function GastosScreen({ route, navigation }) {
 
   async function guardar(values) {
     setSaving(true)
-    const payload = { ...values, monto: parseFloat(values.monto) || 0 }
-    if (tab !== 'puntuales') payload.tipo_monto = tab === 'variables' ? 'variable' : 'fijo'
+    let payload
+    if (tab === 'variables') {
+      // El rubro se crea/edita solo con nombre + categoria; el monto lo llevan
+      // las compras del mes. Al crear se manda 0 (el estimado se aprende solo).
+      payload = { descripcion: values.descripcion, categoria: values.categoria }
+      if (!modal.item) {
+        payload = {
+          ...payload,
+          monto: 0,
+          tipo_monto: 'variable',
+          frecuencia: 'mensual',
+          fecha_inicio: new Date().toISOString().slice(0, 10),
+          activo: true,
+        }
+      }
+    } else {
+      payload = { ...values, monto: parseFloat(values.monto) || 0 }
+      if (tab !== 'puntuales') payload.tipo_monto = 'fijo'
+    }
     const { endpoint } = CONFIG_TAB[tab]
     try {
       if (modal.item) await api.patch(`${endpoint}${modal.item.id}/`, payload)
@@ -114,25 +131,6 @@ export default function GastosScreen({ route, navigation }) {
       setModal({ visible: false, item: null })
       cargar()
     } catch { Alert.alert('Error', 'No se pudo guardar.') }
-    finally { setSaving(false) }
-  }
-
-  async function guardarMontoReal(values) {
-    const item = realModal.item
-    if (!item) return
-    const ahora = new Date()
-    // Fecha LOCAL (no UTC) para no registrar un consumo con "fecha futura"
-    // en zonas UTC- (ej. Ecuador). El backend deriva anio/mes de la fecha.
-    const fecha = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`
-    setSaving(true)
-    try {
-      await api.post(`/finanzas/gastos-corrientes/${item.id}/ejecuciones/`, {
-        fecha,
-        monto_real: parseFloat(values.monto_real) || 0,
-      })
-      setRealModal({ visible: false, item: null })
-      cargar()
-    } catch { Alert.alert('Error', 'No se pudo guardar el monto real.') }
     finally { setSaving(false) }
   }
 
@@ -173,7 +171,25 @@ export default function GastosScreen({ route, navigation }) {
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 100 }}
           ListEmptyComponent={<Text style={s.empty}>No hay registros aún</Text>}
-          renderItem={({ item }) => (
+          renderItem={({ item }) => esVariable ? (
+            <SwipeableRow
+              onEdit={() => setModal({ visible: true, item: { id: item.id, descripcion: item.descripcion, categoria: item.categoria } })}
+              onDelete={() => eliminar(item)}
+            >
+              <TouchableOpacity style={s.card} activeOpacity={0.7} onPress={() => setRubroModal({ visible: true, rubro: item })}>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.desc}>{item.descripcion}</Text>
+                  <Text style={s.meta}>{item.categoria}</Text>
+                </View>
+                <View style={s.cardRight}>
+                  {item.real != null
+                    ? <Text style={s.monto}>{formatMoney(item.real)}</Text>
+                    : <Text style={s.pendiente}>Pendiente</Text>}
+                  <Text style={s.estimado}>este mes</Text>
+                </View>
+              </TouchableOpacity>
+            </SwipeableRow>
+          ) : (
             <SwipeableRow onEdit={() => setModal({ visible: true, item })} onDelete={() => eliminar(item)}>
               <View style={s.card}>
                 <View style={{ flex: 1 }}>
@@ -185,16 +201,7 @@ export default function GastosScreen({ route, navigation }) {
                 </View>
                 <View style={s.cardRight}>
                   <Text style={s.monto}>{formatMoney(item.monto)}</Text>
-                  {esVariable && <Text style={s.estimado}>estimado</Text>}
                 </View>
-                {esVariable && (
-                  <TouchableOpacity
-                    style={s.btnReal}
-                    onPress={() => setRealModal({ visible: true, item })}
-                  >
-                    <Text style={s.btnRealText}>Pagué</Text>
-                  </TouchableOpacity>
-                )}
               </View>
             </SwipeableRow>
           )}
@@ -215,14 +222,13 @@ export default function GastosScreen({ route, navigation }) {
         loading={saving}
       />
 
-      <FormModal
-        visible={realModal.visible}
-        onClose={() => setRealModal({ visible: false, item: null })}
-        onSave={guardarMontoReal}
-        title={realModal.item ? `${realModal.item.descripcion} — este mes` : 'Monto real'}
-        fields={FIELDS_MONTO_REAL}
-        initialValues={{}}
-        loading={saving}
+      <RubroModal
+        visible={rubroModal.visible}
+        rubro={rubroModal.rubro}
+        anio={anioMes.anio}
+        mes={anioMes.mes}
+        onClose={() => setRubroModal({ visible: false, rubro: null })}
+        onChanged={cargar}
       />
     </GestureHandlerRootView>
   )
@@ -243,9 +249,8 @@ const s = StyleSheet.create({
   desc: { color: '#fff', fontSize: 15, fontWeight: '600' },
   meta: { color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 2 },
   monto: { color: '#F87171', fontWeight: '700', fontSize: 16 },
+  pendiente: { color: '#FBBF24', fontWeight: '700', fontSize: 14 },
   estimado: { color: 'rgba(255,255,255,0.3)', fontSize: 10, marginTop: 1 },
-  btnReal: { marginLeft: 10, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: 'rgba(74,222,128,0.15)', borderWidth: 1, borderColor: 'rgba(74,222,128,0.35)' },
-  btnRealText: { color: '#4ADE80', fontSize: 12, fontWeight: '700' },
   empty: { color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: 40 },
   fab: { position: 'absolute', bottom: 28, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: '#8B5CF6', justifyContent: 'center', alignItems: 'center', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 8 },
   fabText: { color: '#fff', fontSize: 28, fontWeight: '300', lineHeight: 32 },
