@@ -132,6 +132,7 @@ export default function DashboardScreen({ navigation }) {
   const [reportLoading, setReportLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
+  const [expandedDetail, setExpandedDetail] = useState(null) // 'income' | 'expense' | null
   const reportRequestRef = useRef(0)
 
   const projectionDisplayMonths = Math.max(2, Number(user?.feature_access?.projection_months || 6))
@@ -607,9 +608,38 @@ export default function DashboardScreen({ navigation }) {
       </View>
 
       <View style={s.grid}>
-        <StatCard label="Ingresos" value={totalIngresos} color="#10B981" icon="💰" />
-        <StatCard label="Gastos" value={totalGastos} color="#F87171" icon="💸" />
+        <StatCard
+          label="Ingresos" value={totalIngresos} color="#10B981" icon="💰"
+          expanded={expandedDetail === 'income'}
+          onPress={() => setExpandedDetail((p) => (p === 'income' ? null : 'income'))}
+        />
+        <StatCard
+          label="Gastos" value={totalGastos} color="#F87171" icon="💸"
+          expanded={expandedDetail === 'expense'}
+          onPress={() => setExpandedDetail((p) => (p === 'expense' ? null : 'expense'))}
+        />
       </View>
+
+      {expandedDetail === 'income' ? (
+        <DetailCard
+          title={`Detalle de ingresos · ${selectedMonthLabel}`}
+          total={totalIngresos}
+          items={incomeDetailItems}
+          emptyLabel={`No tienes ingresos guardados en ${selectedMonthLabel.toLowerCase()}.`}
+          accent="#10B981"
+          showAll
+        />
+      ) : null}
+      {expandedDetail === 'expense' ? (
+        <DetailCard
+          title={`Detalle de gastos · ${selectedMonthLabel}`}
+          total={totalGastos}
+          items={expenseDetailItems}
+          emptyLabel={`No tienes gastos guardados en ${selectedMonthLabel.toLowerCase()}.`}
+          accent="#F87171"
+          showAll
+        />
+      ) : null}
 
       <View style={s.balanceCard}>
         <View style={s.balanceRow}>
@@ -672,22 +702,6 @@ export default function DashboardScreen({ navigation }) {
           </View>
         ))}
       </View>
-
-      <DetailCard
-        title="Ingresos del mes"
-        total={totalIngresos}
-        items={incomeDetailItems}
-        emptyLabel={`No tienes ingresos guardados en ${selectedMonthLabel.toLowerCase()}.`}
-        accent="#10B981"
-      />
-
-      <DetailCard
-        title="Gastos del mes"
-        total={totalGastos}
-        items={expenseDetailItems}
-        emptyLabel={`No tienes gastos guardados en ${selectedMonthLabel.toLowerCase()}.`}
-        accent="#F87171"
-      />
 
       {activeReport?.categorias?.length > 0 && (
         <View style={s.section}>
@@ -795,17 +809,22 @@ export default function DashboardScreen({ navigation }) {
   )
 }
 
-function StatCard({ label, value, color, icon }) {
+function StatCard({ label, value, color, icon, onPress, expanded }) {
+  const Wrapper = onPress ? TouchableOpacity : View
   return (
-    <View style={[s.statCard, { borderColor: `${color}33` }]}>
+    <Wrapper style={[s.statCard, { borderColor: `${color}33` }, expanded && { borderColor: color }]} onPress={onPress} activeOpacity={0.8}>
       <Text style={s.statIcon}>{icon}</Text>
       <Text style={[s.statValue, { color }]}>{formatMoney(value)}</Text>
       <Text style={s.statLabel}>{label}</Text>
-    </View>
+      {onPress ? (
+        <Text style={[s.statDetail, { color }]}>{expanded ? 'Ocultar ▲' : 'Ver detalle ▾'}</Text>
+      ) : null}
+    </Wrapper>
   )
 }
 
-function DetailCard({ title, total, items, emptyLabel, accent }) {
+function DetailCard({ title, total, items, emptyLabel, accent, showAll }) {
+  const visibles = showAll ? items : items.slice(0, 4)
   return (
     <View style={s.section}>
       <View style={s.sectionHeader}>
@@ -816,7 +835,7 @@ function DetailCard({ title, total, items, emptyLabel, accent }) {
         <Text style={s.emptyListText}>{emptyLabel}</Text>
       ) : (
         <>
-          {items.slice(0, 4).map((item) => (
+          {visibles.map((item) => (
             <View key={item.id} style={s.detailRow}>
               <View style={{ flex: 1 }}>
                 <Text style={s.detailLabel}>{item.label}</Text>
@@ -825,7 +844,7 @@ function DetailCard({ title, total, items, emptyLabel, accent }) {
               <Text style={[s.detailAmount, { color: accent }]}>{formatMoney(item.amount)}</Text>
             </View>
           ))}
-          {items.length > 4 && (
+          {!showAll && items.length > 4 && (
             <Text style={s.moreText}>y {items.length - 4} más</Text>
           )}
         </>
@@ -982,6 +1001,7 @@ const s = StyleSheet.create({
   statIcon: { fontSize: 20, marginBottom: 6 },
   statValue: { fontSize: 18, fontWeight: '800', marginBottom: 4 },
   statLabel: { color: 'rgba(255,255,255,0.42)', fontSize: 12 },
+  statDetail: { fontSize: 11, fontWeight: '700', marginTop: 6, opacity: 0.85 },
   balanceCard: {
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 16,
