@@ -16,6 +16,7 @@ import { formatMoney, formatDate } from '../../utils/formatters'
 import { montoEfectivoMes } from '../../utils/frecuencias'
 import ProjectionChart from '../../components/ui/ProjectionChart'
 import NotificationBell from '../../components/ui/NotificationBell'
+import SaludFinancieraCard from '../../components/ui/SaludFinancieraCard'
 import { getApiErrorMessage } from '../../api/errors'
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
@@ -665,6 +666,8 @@ export default function DashboardScreen({ navigation }) {
           </Text>
         </View>
       )}
+
+      <SaludFinancieraCard navigation={navigation} />
 
       <View style={s.section}>
         <View style={s.sectionHeader}>
