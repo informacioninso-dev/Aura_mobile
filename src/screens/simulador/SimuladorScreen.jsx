@@ -152,7 +152,7 @@ const s = StyleSheet.create({
   content: { padding: 16, paddingBottom: 40 },
   center: { flex: 1, backgroundColor: '#0F172A', justifyContent: 'center', alignItems: 'center' },
   title: { color: '#fff', fontSize: 22, fontWeight: '700', marginBottom: 2 },
-  sub: { color: 'rgba(255,255,255,0.35)', fontSize: 13, marginBottom: 20 },
+  sub: { color: 'rgba(255,255,255,0.35)', fontSize: 13, marginBottom: 16 },
   form: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', gap: 12 },
   row: { flexDirection: 'row', gap: 12 },
   fieldHalf: { flex: 1 },

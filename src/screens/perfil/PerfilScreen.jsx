@@ -105,7 +105,7 @@ function MenuItem({ icon, label, onPress, active }) {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0F172A' },
   content: { padding: 16, paddingBottom: 40, alignItems: 'center' },
-  title: { color: '#fff', fontSize: 22, fontWeight: '700', marginBottom: 24, alignSelf: 'flex-start' },
+  title: { color: '#fff', fontSize: 22, fontWeight: '700', marginBottom: 16, alignSelf: 'flex-start' },
   avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#8B5CF6', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
   avatarText: { color: '#fff', fontSize: 32, fontWeight: '700' },
   nombre: { color: '#fff', fontSize: 18, fontWeight: '700', marginBottom: 4 },

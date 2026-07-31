@@ -139,7 +139,7 @@ const s = StyleSheet.create({
   totalBanner: { flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 16, marginBottom: 8, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: 12 },
   totalLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 13 },
   totalValue: { fontWeight: '700', fontSize: 15 },
-  card: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 14, borderWidth: 1 },
+  card: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
   persona: { color: '#fff', fontWeight: '700', fontSize: 15 },
   concepto: { color: 'rgba(255,255,255,0.5)', fontSize: 13, marginTop: 2 },
   fecha: { color: 'rgba(255,255,255,0.3)', fontSize: 11, marginTop: 2 },

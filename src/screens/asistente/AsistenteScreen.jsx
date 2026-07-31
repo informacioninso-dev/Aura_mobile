@@ -267,7 +267,7 @@ const s = StyleSheet.create({
   content: { padding: 20, paddingBottom: 40 },
   center: { justifyContent: 'center', alignItems: 'center' },
   title: { color: '#C487F6', fontSize: 24, fontWeight: '800', marginBottom: 4 },
-  sub: { color: 'rgba(255,255,255,0.4)', fontSize: 14, marginBottom: 28 },
+  sub: { color: 'rgba(255,255,255,0.35)', fontSize: 13, marginBottom: 16 },
   micSection: { alignItems: 'center', marginBottom: 24, gap: 12 },
   micBtn: { width: 88, height: 88, borderRadius: 44, backgroundColor: 'rgba(139,92,246,0.2)', borderWidth: 2, borderColor: '#8B5CF6', justifyContent: 'center', alignItems: 'center' },
   micBtnActive: { backgroundColor: 'rgba(248,113,113,0.2)', borderColor: '#F87171' },
