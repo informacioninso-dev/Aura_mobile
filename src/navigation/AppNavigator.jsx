@@ -23,6 +23,7 @@ import ImportarScreen from '../screens/importar/ImportarScreen'
 import ReportesScreen from '../screens/reportes/ReportesScreen'
 import PlanesScreen from '../screens/planes/PlanesScreen'
 import PagoScreen from '../screens/planes/PagoScreen'
+import { colors } from '../theme/theme'
 
 const Stack = createNativeStackNavigator()
 const Tab = createBottomTabNavigator()
@@ -122,24 +123,24 @@ function MasMenu({ navigation }) {
 }
 
 const ms = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F172A' },
+  root: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: 16 },
-  title: { color: '#fff', fontSize: 26, fontWeight: '800', marginBottom: 20 },
+  title: { color: colors.text, fontSize: 26, fontWeight: '800', marginBottom: 20 },
   group: { marginBottom: 22 },
   groupTitle: {
-    color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: '700',
+    color: colors.textMuted, fontSize: 12, fontWeight: '700',
     letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8, marginLeft: 4,
   },
   card: {
-    backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16,
+    backgroundColor: colors.surface, borderRadius: 16,
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', overflow: 'hidden',
   },
   item: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, gap: 14 },
   itemBorder: { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' },
   icon: { fontSize: 22, width: 28, textAlign: 'center' },
   itemText: { flex: 1 },
-  label: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  hint: { color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 2 },
+  label: { color: colors.text, fontSize: 16, fontWeight: '600' },
+  hint: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
   arrow: { color: 'rgba(255,255,255,0.3)', fontSize: 22 },
   legalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 },
   legalLink: { color: 'rgba(255,255,255,0.45)', fontSize: 13, textDecorationLine: 'underline' },
@@ -179,13 +180,13 @@ const fab = StyleSheet.create({
   wrap: { top: -20, justifyContent: 'center', alignItems: 'center', width: 70 },
   btn: {
     width: 58, height: 58, borderRadius: 29,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: colors.primaryStrong,
     justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#C487F6', shadowOffset: { width: 0, height: 4 },
+    shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.5, shadowRadius: 10, elevation: 10,
   },
-  btnActive: { backgroundColor: '#C487F6' },
-  icon: { fontSize: 22, color: '#fff' },
+  btnActive: { backgroundColor: colors.primary },
+  icon: { fontSize: 22, color: colors.text },
 })
 
 function TabIcon({ name, focused }) {
@@ -201,12 +202,12 @@ function MainTabs() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#0F172A',
+          backgroundColor: colors.bg,
           borderTopColor: 'rgba(196,135,246,0.15)',
           height: baseHeight + insets.bottom,
         },
-        tabBarActiveTintColor: '#C487F6',
-        tabBarInactiveTintColor: 'rgba(255,255,255,0.4)',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarIcon: ({ focused }) => <TabIcon name={route.name} focused={focused} />,
         tabBarLabelStyle: { fontSize: 10.5, fontWeight: '600', marginTop: 2 },
         tabBarItemStyle: { paddingVertical: 4 },
@@ -260,19 +261,19 @@ export default function AppNavigator() {
 const loadingStyles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: colors.bg,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 12,
   },
   title: {
-    color: '#C487F6',
+    color: colors.primary,
     fontSize: 28,
     fontWeight: '800',
     letterSpacing: 4,
   },
   subtitle: {
-    color: 'rgba(255,255,255,0.4)',
+    color: colors.textMuted,
     fontSize: 14,
   },
 })

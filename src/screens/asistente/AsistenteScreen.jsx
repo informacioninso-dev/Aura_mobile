@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { colors } from '../../theme/theme'
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ActivityIndicator, ScrollView, Animated, Easing,
@@ -207,7 +208,7 @@ export default function AsistenteScreen() {
         <>
           <Text style={s.confirmLabel}>Revisá y editá si hace falta:</Text>
           <View style={[s.card, { borderColor: esGasto ? 'rgba(248,113,113,0.3)' : 'rgba(16,185,129,0.3)' }]}>
-            <Text style={[s.tipo, { color: esGasto ? '#F87171' : '#10B981' }]}>{TIPO_LABELS[parsed.tipo]}</Text>
+            <Text style={[s.tipo, { color: esGasto ? colors.danger : colors.success }]}>{TIPO_LABELS[parsed.tipo]}</Text>
 
             <Text style={s.fieldLabel}>Descripción</Text>
             <TextInput style={s.fieldInput} value={campo('descripcion') || ''} onChangeText={(v) => setEditar('descripcion', v)} placeholderTextColor="rgba(255,255,255,0.3)" />
@@ -263,34 +264,34 @@ export default function AsistenteScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F172A' },
+  root: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 20, paddingBottom: 40 },
   center: { justifyContent: 'center', alignItems: 'center' },
   micSection: { alignItems: 'center', marginBottom: 24, gap: 12 },
-  micBtn: { width: 88, height: 88, borderRadius: 44, backgroundColor: 'rgba(139,92,246,0.2)', borderWidth: 2, borderColor: '#8B5CF6', justifyContent: 'center', alignItems: 'center' },
-  micBtnActive: { backgroundColor: 'rgba(248,113,113,0.2)', borderColor: '#F87171' },
+  micBtn: { width: 88, height: 88, borderRadius: 44, backgroundColor: 'rgba(139,92,246,0.2)', borderWidth: 2, borderColor: colors.primaryStrong, justifyContent: 'center', alignItems: 'center' },
+  micBtnActive: { backgroundColor: colors.borderExpense, borderColor: colors.danger },
   micIcon: { fontSize: 36 },
-  micLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 13 },
+  micLabel: { color: colors.textMuted, fontSize: 13 },
   divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
   dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' },
   dividerText: { color: 'rgba(255,255,255,0.3)', fontSize: 12 },
-  input: { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 12, padding: 14, color: '#fff', fontSize: 15, marginBottom: 12, minHeight: 80, textAlignVertical: 'top' },
-  btn: { backgroundColor: '#8B5CF6', borderRadius: 12, padding: 15, alignItems: 'center' },
+  input: { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 12, padding: 14, color: colors.text, fontSize: 15, marginBottom: 12, minHeight: 80, textAlignVertical: 'top' },
+  btn: { backgroundColor: colors.primaryStrong, borderRadius: 12, padding: 15, alignItems: 'center' },
   btnFlex: { flex: 2 },
   btnDisabled: { opacity: 0.4 },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  btnText: { color: colors.text, fontWeight: '700', fontSize: 16 },
   btnSecondary: { flex: 1, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: 15, alignItems: 'center', marginRight: 10 },
   btnSecondaryText: { color: 'rgba(255,255,255,0.6)', fontWeight: '600' },
-  confirmLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 13, marginBottom: 12 },
-  card: { backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 16, gap: 4 },
+  confirmLabel: { color: colors.textMuted, fontSize: 13, marginBottom: 12 },
+  card: { backgroundColor: colors.surface, borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 16, gap: 4 },
   tipo: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
-  fieldLabel: { color: 'rgba(255,255,255,0.35)', fontSize: 11, marginBottom: 4 },
-  fieldInput: { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 8, padding: 10, color: '#fff', fontSize: 14, marginBottom: 10 },
-  chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', backgroundColor: 'rgba(255,255,255,0.05)' },
-  chipActive: { backgroundColor: '#8B5CF6', borderColor: '#8B5CF6' },
+  fieldLabel: { color: colors.textFaint, fontSize: 11, marginBottom: 4 },
+  fieldInput: { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 8, padding: 10, color: colors.text, fontSize: 14, marginBottom: 10 },
+  chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', backgroundColor: colors.surface },
+  chipActive: { backgroundColor: colors.primaryStrong, borderColor: colors.primaryStrong },
   chipText: { color: 'rgba(255,255,255,0.5)', fontSize: 12 },
-  chipTextActive: { color: '#fff', fontWeight: '600' },
-  error: { color: '#F87171', fontSize: 13, marginBottom: 10 },
+  chipTextActive: { color: colors.text, fontWeight: '600' },
+  error: { color: colors.danger, fontSize: 13, marginBottom: 10 },
   row: { flexDirection: 'row' },
-  exitoText: { color: '#10B981', fontSize: 20, fontWeight: '700', marginTop: 12 },
+  exitoText: { color: colors.success, fontSize: 20, fontWeight: '700', marginTop: 12 },
 })

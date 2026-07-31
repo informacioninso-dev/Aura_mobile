@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { colors } from '../../theme/theme'
 import {
   Modal, View, Text, TextInput, TouchableOpacity,
   StyleSheet, ScrollView, ActivityIndicator, Platform,
@@ -69,7 +70,7 @@ export default function FormModal({ visible, onClose, onSave, title, fields, ini
                   <View key={field.key} style={s.field}>
                     <Text style={s.label}>{field.label}</Text>
                     <TouchableOpacity style={s.input} onPress={() => setShowDate(field.key)}>
-                      <Text style={{ color: values[field.key] ? '#fff' : 'rgba(255,255,255,0.3)' }}>
+                      <Text style={{ color: values[field.key] ? colors.text : 'rgba(255,255,255,0.3)' }}>
                         {values[field.key] || 'Seleccionar fecha'}
                       </Text>
                     </TouchableOpacity>
@@ -137,18 +138,18 @@ const s = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: '#0F1B35', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 36, maxHeight: '90%' },
   handle: { width: 40, height: 4, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
-  title: { color: '#fff', fontSize: 18, fontWeight: '700', marginBottom: 20 },
+  title: { color: colors.text, fontSize: 18, fontWeight: '700', marginBottom: 20 },
   field: { marginBottom: 16 },
-  label: { color: 'rgba(255,255,255,0.4)', fontSize: 12, marginBottom: 6 },
-  input: { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 10, padding: 12, color: '#fff', fontSize: 15 },
+  label: { color: colors.textMuted, fontSize: 12, marginBottom: 6 },
+  input: { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 10, padding: 12, color: colors.text, fontSize: 15 },
   chips: { flexDirection: 'row', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', backgroundColor: 'rgba(255,255,255,0.05)' },
-  chipActive: { backgroundColor: '#8B5CF6', borderColor: '#8B5CF6' },
+  chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', backgroundColor: colors.surface },
+  chipActive: { backgroundColor: colors.primaryStrong, borderColor: colors.primaryStrong },
   chipText: { color: 'rgba(255,255,255,0.5)', fontSize: 13 },
-  chipTextActive: { color: '#fff', fontWeight: '600' },
+  chipTextActive: { color: colors.text, fontWeight: '600' },
   actions: { flexDirection: 'row', gap: 12, marginTop: 20 },
   btnCancel: { flex: 1, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: 14, alignItems: 'center' },
   btnCancelText: { color: 'rgba(255,255,255,0.5)', fontWeight: '600' },
-  btnSave: { flex: 2, backgroundColor: '#8B5CF6', borderRadius: 12, padding: 14, alignItems: 'center' },
-  btnSaveText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  btnSave: { flex: 2, backgroundColor: colors.primaryStrong, borderRadius: 12, padding: 14, alignItems: 'center' },
+  btnSaveText: { color: colors.text, fontWeight: '700', fontSize: 15 },
 })

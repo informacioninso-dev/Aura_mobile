@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { colors } from '../../theme/theme'
 import {
   View,
   Text,
@@ -71,7 +72,7 @@ function puntajeColor(puntaje) {
   if (puntaje >= 80) return '#4ADE80'
   if (puntaje >= 60) return '#A3E635'
   if (puntaje >= 40) return '#FBBF24'
-  return '#F87171'
+  return colors.danger
 }
 
 export default function SaludFinancieraScreen() {
@@ -227,40 +228,40 @@ export default function SaludFinancieraScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F172A' },
+  root: { flex: 1, backgroundColor: colors.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
 
   monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 4 },
   monthBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center' },
   monthBtnOff: { opacity: 0.3 },
-  monthBtnText: { color: '#fff', fontSize: 20, lineHeight: 22 },
-  monthBtnTextOff: { color: 'rgba(255,255,255,0.4)' },
-  monthLabel: { color: '#fff', fontSize: 15, fontWeight: '600', minWidth: 140, textAlign: 'center' },
+  monthBtnText: { color: colors.text, fontSize: 20, lineHeight: 22 },
+  monthBtnTextOff: { color: colors.textMuted },
+  monthLabel: { color: colors.text, fontSize: 15, fontWeight: '600', minWidth: 140, textAlign: 'center' },
 
-  scoreCard: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, paddingVertical: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', gap: 12 },
+  scoreCard: { alignItems: 'center', backgroundColor: colors.surface, borderRadius: 16, paddingVertical: 24, borderWidth: 1, borderColor: colors.border, gap: 12 },
   scoreNum: { fontSize: 40, fontWeight: '800' },
-  scoreMax: { color: 'rgba(255,255,255,0.35)', fontSize: 11, marginTop: 2 },
+  scoreMax: { color: colors.textFaint, fontSize: 11, marginTop: 2 },
   badge: { paddingHorizontal: 14, paddingVertical: 5, borderRadius: 999, borderWidth: 1 },
   badgeText: { fontSize: 13, fontWeight: '700' },
 
-  card: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', gap: 8 },
+  card: { backgroundColor: colors.surface, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.border, gap: 8 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  compLabel: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  compLabel: { color: colors.text, fontSize: 14, fontWeight: '600' },
   compValor: { fontSize: 14, fontWeight: '700' },
-  compDesc: { color: 'rgba(255,255,255,0.4)', fontSize: 12, lineHeight: 16 },
-  barBg: { height: 5, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' },
+  compDesc: { color: colors.textMuted, fontSize: 12, lineHeight: 16 },
+  barBg: { height: 5, backgroundColor: colors.border, borderRadius: 3, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: 3 },
 
   consejosCard: { backgroundColor: 'rgba(196,135,246,0.08)', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: 'rgba(196,135,246,0.25)', gap: 8 },
-  consejosTitle: { color: '#C487F6', fontSize: 13, fontWeight: '700', marginBottom: 2 },
+  consejosTitle: { color: colors.primary, fontSize: 13, fontWeight: '700', marginBottom: 2 },
   consejoRow: { flexDirection: 'row', gap: 8 },
-  consejoBullet: { color: '#C487F6', fontSize: 13, lineHeight: 18 },
+  consejoBullet: { color: colors.primary, fontSize: 13, lineHeight: 18 },
   consejoText: { color: 'rgba(255,255,255,0.75)', fontSize: 13, lineHeight: 18, flex: 1 },
 
-  lockedCard: { margin: 16, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', alignItems: 'center', gap: 10 },
+  lockedCard: { margin: 16, backgroundColor: colors.surface, borderRadius: 16, padding: 24, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 10 },
   lockedIcon: { fontSize: 32 },
-  lockedTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  lockedTitle: { color: colors.text, fontSize: 16, fontWeight: '700' },
   lockedText: { color: 'rgba(255,255,255,0.5)', fontSize: 13, lineHeight: 19, textAlign: 'center' },
 
-  empty: { color: 'rgba(255,255,255,0.35)', textAlign: 'center', fontSize: 13 },
+  empty: { color: colors.textFaint, textAlign: 'center', fontSize: 13 },
 })

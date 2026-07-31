@@ -8,6 +8,7 @@ import SwipeableRow from '../../components/ui/SwipeableRow'
 import RubroModal from './RubroModal'
 import { useTopInset } from '../../hooks/useTopInset'
 import ScreenHeader from '../../components/ui/ScreenHeader'
+import { colors } from '../../theme/theme'
 
 const FREQ = { diario: 'Diario', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual', bimestral: 'Bimestral', trimestral: 'Trimestral', semestral: 'Semestral', anual: 'Anual' }
 
@@ -238,22 +239,22 @@ export default function GastosScreen({ route, navigation }) {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F172A' },
+  root: { flex: 1, backgroundColor: colors.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   tabs: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 6, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: 4 },
   tab: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
-  tabActive: { backgroundColor: '#8B5CF6' },
-  tabText: { color: 'rgba(255,255,255,0.4)', fontWeight: '600', fontSize: 13 },
-  tabTextActive: { color: '#fff' },
-  tabHint: { color: 'rgba(255,255,255,0.35)', fontSize: 12, textAlign: 'center', marginBottom: 6 },
-  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: 'rgba(248,113,113,0.2)' },
+  tabActive: { backgroundColor: colors.primaryStrong },
+  tabText: { color: colors.textMuted, fontWeight: '600', fontSize: 13 },
+  tabTextActive: { color: colors.text },
+  tabHint: { color: colors.textFaint, fontSize: 12, textAlign: 'center', marginBottom: 6 },
+  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.borderExpense },
   cardRight: { alignItems: 'flex-end' },
-  desc: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  meta: { color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 2 },
-  monto: { color: '#F87171', fontWeight: '700', fontSize: 16 },
+  desc: { color: colors.text, fontSize: 15, fontWeight: '600' },
+  meta: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+  monto: { color: colors.danger, fontWeight: '700', fontSize: 16 },
   pendiente: { color: '#FBBF24', fontWeight: '700', fontSize: 14 },
   estimado: { color: 'rgba(255,255,255,0.3)', fontSize: 10, marginTop: 1 },
   empty: { color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: 40 },
-  fab: { position: 'absolute', bottom: 28, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: '#8B5CF6', justifyContent: 'center', alignItems: 'center', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 8 },
-  fabText: { color: '#fff', fontSize: 28, fontWeight: '300', lineHeight: 32 },
+  fab: { position: 'absolute', bottom: 28, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primaryStrong, justifyContent: 'center', alignItems: 'center', shadowColor: colors.primaryStrong, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 8 },
+  fabText: { color: colors.text, fontSize: 28, fontWeight: '300', lineHeight: 32 },
 })

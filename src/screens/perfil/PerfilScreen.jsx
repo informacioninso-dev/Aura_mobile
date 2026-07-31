@@ -6,6 +6,7 @@ import { getApiErrorMessage } from '../../api/errors'
 import { useBiometrics } from '../../hooks/useBiometrics'
 import { useTopInset } from '../../hooks/useTopInset'
 import ScreenHeader from '../../components/ui/ScreenHeader'
+import { colors } from '../../theme/theme'
 
 export default function PerfilScreen({ navigation }) {
   const { user, logout } = useAuth()
@@ -31,7 +32,7 @@ export default function PerfilScreen({ navigation }) {
   }
 
   const plan = user?.plan?.name || 'Gratuito'
-  const planColor = plan.toLowerCase().includes('pro') ? '#C487F6' : 'rgba(255,255,255,0.4)'
+  const planColor = plan.toLowerCase().includes('pro') ? colors.primary : colors.textMuted
   const topPad = useTopInset()
 
   return (
@@ -62,7 +63,7 @@ export default function PerfilScreen({ navigation }) {
               value={habilitado}
               onValueChange={toggleHabilitado}
               trackColor={{ false: 'rgba(255,255,255,0.1)', true: 'rgba(139,92,246,0.5)' }}
-              thumbColor={habilitado ? '#8B5CF6' : 'rgba(255,255,255,0.4)'}
+              thumbColor={habilitado ? colors.primaryStrong : colors.textMuted}
             />
           </View>
         )}
@@ -72,7 +73,7 @@ export default function PerfilScreen({ navigation }) {
             <TextInput style={s.input} placeholder="Contraseña actual" placeholderTextColor="rgba(255,255,255,0.3)" secureTextEntry value={oldPass} onChangeText={setOldPass} />
             <TextInput style={s.input} placeholder="Nueva contraseña" placeholderTextColor="rgba(255,255,255,0.3)" secureTextEntry value={newPass} onChangeText={setNewPass} />
             <TextInput style={s.input} placeholder="Confirmar nueva" placeholderTextColor="rgba(255,255,255,0.3)" secureTextEntry value={newPass2} onChangeText={setNewPass2} />
-            {msg ? <Text style={[s.msg, { color: msg.startsWith('✅') ? '#10B981' : '#F87171' }]}>{msg}</Text> : null}
+            {msg ? <Text style={[s.msg, { color: msg.startsWith('✅') ? colors.success : colors.danger }]}>{msg}</Text> : null}
             <TouchableOpacity style={s.btn} onPress={cambiarPassword} disabled={loading}>
               {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>Guardar</Text>}
             </TouchableOpacity>
@@ -104,26 +105,26 @@ function MenuItem({ icon, label, onPress, active }) {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F172A' },
+  root: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 16, paddingBottom: 40, alignItems: 'center' },
-  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#8B5CF6', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  avatarText: { color: '#fff', fontSize: 32, fontWeight: '700' },
-  nombre: { color: '#fff', fontSize: 18, fontWeight: '700', marginBottom: 4 },
-  email: { color: 'rgba(255,255,255,0.4)', fontSize: 14, marginBottom: 10 },
+  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: colors.primaryStrong, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  avatarText: { color: colors.text, fontSize: 32, fontWeight: '700' },
+  nombre: { color: colors.text, fontSize: 18, fontWeight: '700', marginBottom: 4 },
+  email: { color: colors.textMuted, fontSize: 14, marginBottom: 10 },
   planBadge: { backgroundColor: 'rgba(196,135,246,0.12)', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 5, marginBottom: 28 },
   planText: { fontSize: 13, fontWeight: '700' },
   secciones: { width: '100%', gap: 2, marginBottom: 24 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 14, gap: 12 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 12, padding: 14, gap: 12 },
   menuItemActive: { backgroundColor: 'rgba(139,92,246,0.15)', borderWidth: 1, borderColor: 'rgba(139,92,246,0.3)' },
   menuIcon: { fontSize: 18 },
-  menuLabel: { flex: 1, color: '#fff', fontSize: 15 },
+  menuLabel: { flex: 1, color: colors.text, fontSize: 15 },
   menuArrow: { color: 'rgba(255,255,255,0.3)', fontSize: 16 },
   subForm: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 14, gap: 10 },
-  input: { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 10, padding: 12, color: '#fff', fontSize: 14 },
+  input: { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 10, padding: 12, color: colors.text, fontSize: 14 },
   msg: { fontSize: 13 },
-  btn: { backgroundColor: '#8B5CF6', borderRadius: 10, padding: 12, alignItems: 'center' },
-  btnText: { color: '#fff', fontWeight: '700' },
+  btn: { backgroundColor: colors.primaryStrong, borderRadius: 10, padding: 12, alignItems: 'center' },
+  btnText: { color: colors.text, fontWeight: '700' },
   logoutBtn: { backgroundColor: 'rgba(248,113,113,0.1)', borderWidth: 1, borderColor: 'rgba(248,113,113,0.25)', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32, marginBottom: 20 },
-  logoutText: { color: '#F87171', fontWeight: '700', fontSize: 15 },
+  logoutText: { color: colors.danger, fontWeight: '700', fontSize: 15 },
   version: { color: 'rgba(255,255,255,0.2)', fontSize: 12 },
 })

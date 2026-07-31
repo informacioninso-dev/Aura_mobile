@@ -7,6 +7,7 @@ import { getApiErrorMessage } from '../../api/errors'
 import { formatMoney } from '../../utils/formatters'
 import { useTopInset } from '../../hooks/useTopInset'
 import ScreenHeader from '../../components/ui/ScreenHeader'
+import { colors } from '../../theme/theme'
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
@@ -144,7 +145,7 @@ export default function ReportesScreen() {
     }
   }
 
-  const balanceColor = data ? (data.resumen.balance >= 0 ? '#10B981' : '#F87171') : '#fff'
+  const balanceColor = data ? (data.resumen.balance >= 0 ? colors.success : colors.danger) : colors.text
   const topPad = useTopInset()
 
   return (
@@ -210,7 +211,7 @@ export default function ReportesScreen() {
               <Text style={s.cardTitle}>Gastos por categoría</Text>
               {data.categorias.map((cat) => {
                 const pct = cat.pct_limite
-                const barColor = pct == null ? '#C487F6' : pct >= 100 ? '#F87171' : pct >= 75 ? '#FBBF24' : '#10B981'
+                const barColor = pct == null ? colors.primary : pct >= 100 ? colors.danger : pct >= 75 ? '#FBBF24' : colors.success
                 return (
                   <View key={cat.categoria} style={s.catRow}>
                     <View style={s.catHeader}>
@@ -256,7 +257,7 @@ export default function ReportesScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F172A' },
+  root: { flex: 1, backgroundColor: colors.bg },
   center: { paddingVertical: 40, alignItems: 'center' },
   monthSwitcher: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -264,47 +265,47 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', padding: 10, marginBottom: 12,
   },
   monthNavBtn: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
-  monthNavArrow: { color: '#C487F6', fontSize: 24, lineHeight: 26 },
-  monthLabel: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  monthNavArrow: { color: colors.primary, fontSize: 24, lineHeight: 26 },
+  monthLabel: { color: colors.text, fontWeight: '700', fontSize: 16 },
   actionsRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
   actionBtn: { flex: 1, borderRadius: 14, paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
-  actionBtnPrimary: { backgroundColor: '#8B5CF6' },
+  actionBtnPrimary: { backgroundColor: colors.primaryStrong },
   actionBtnSecondary: { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(196,135,246,0.3)' },
-  actionBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  actionBtnTextSecondary: { color: '#C487F6', fontWeight: '700', fontSize: 13 },
+  actionBtnText: { color: colors.text, fontWeight: '700', fontSize: 13 },
+  actionBtnTextSecondary: { color: colors.primary, fontWeight: '700', fontSize: 13 },
   btnDisabled: { opacity: 0.5 },
-  errorMsg: { color: '#F87171', fontSize: 13, marginBottom: 8, textAlign: 'center' },
+  errorMsg: { color: colors.danger, fontSize: 13, marginBottom: 8, textAlign: 'center' },
   grid2: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
   summaryCard: {
-    width: '47%', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 14, padding: 14,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', alignItems: 'center',
+    width: '47%', backgroundColor: colors.surface, borderRadius: 14, padding: 14,
+    borderWidth: 1, borderColor: colors.border, alignItems: 'center',
   },
   summaryLabel: { color: 'rgba(255,255,255,0.45)', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 },
   summaryValue: { fontSize: 22, fontWeight: '800' },
   miniCard: {
     width: '47%', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 12,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', alignItems: 'center',
+    borderWidth: 1, borderColor: colors.border, alignItems: 'center',
   },
   miniLabel: { color: 'rgba(255,255,255,0.40)', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, textAlign: 'center' },
   miniValue: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '700' },
   card: {
-    backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 14, padding: 16,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', marginBottom: 16,
+    backgroundColor: colors.surface, borderRadius: 14, padding: 16,
+    borderWidth: 1, borderColor: colors.border, marginBottom: 16,
   },
-  cardTitle: { color: '#fff', fontWeight: '700', fontSize: 15, marginBottom: 14 },
+  cardTitle: { color: colors.text, fontWeight: '700', fontSize: 15, marginBottom: 14 },
   catRow: { marginBottom: 14 },
   catHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 },
-  catNombre: { color: '#fff', fontSize: 13, fontWeight: '600', textTransform: 'capitalize' },
+  catNombre: { color: colors.text, fontSize: 13, fontWeight: '600', textTransform: 'capitalize' },
   catMonto: { color: 'rgba(255,255,255,0.6)', fontSize: 13 },
-  catLimite: { color: 'rgba(255,255,255,0.35)', fontSize: 11 },
-  barBg: { height: 5, borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' },
+  catLimite: { color: colors.textFaint, fontSize: 11 },
+  barBg: { height: 5, borderRadius: 99, backgroundColor: colors.border, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: 99 },
   gastoRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)',
+    paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.surface,
   },
-  gastoDesc: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  gastoDesc: { color: colors.text, fontSize: 13, fontWeight: '600' },
   gastoMeta: { color: 'rgba(255,255,255,0.40)', fontSize: 11, marginTop: 2, textTransform: 'capitalize' },
-  gastoMonto: { color: '#F87171', fontWeight: '700', fontSize: 13, marginLeft: 10 },
+  gastoMonto: { color: colors.danger, fontWeight: '700', fontSize: 13, marginLeft: 10 },
   empty: { color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: 24 },
 })

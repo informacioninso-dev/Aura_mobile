@@ -5,13 +5,14 @@ import api from '../../api/client'
 import { formatMoney } from '../../utils/formatters'
 import { useTopInset } from '../../hooks/useTopInset'
 import ScreenHeader from '../../components/ui/ScreenHeader'
+import { colors } from '../../theme/theme'
 
 const SCREEN_W = Dimensions.get('window').width
 const CW = SCREEN_W - 64
 const CH = 140
 
 function SvgChart({ values, labels, positive }) {
-  const color = positive ? '#10B981' : '#F87171'
+  const color = positive ? colors.success : colors.danger
   const min = Math.min(...values)
   const max = Math.max(...values)
   const range = max - min || 1
@@ -120,7 +121,7 @@ export default function SimuladorScreen() {
         <>
           <View style={[s.resultCard, { borderColor: finalPositivo ? 'rgba(16,185,129,0.3)' : 'rgba(248,113,113,0.3)' }]}>
             <Text style={s.resultLabel}>Saldo proyectado en {simulado.plazo} meses</Text>
-            <Text style={[s.resultValue, { color: finalPositivo ? '#10B981' : '#F87171' }]}>
+            <Text style={[s.resultValue, { color: finalPositivo ? colors.success : colors.danger }]}>
               {formatMoney(simulado.final)}
             </Text>
             <Text style={s.resultSub}>
@@ -148,25 +149,25 @@ export default function SimuladorScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F172A' },
+  root: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 16, paddingBottom: 40 },
-  center: { flex: 1, backgroundColor: '#0F172A', justifyContent: 'center', alignItems: 'center' },
-  form: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', gap: 12 },
+  center: { flex: 1, backgroundColor: colors.bg, justifyContent: 'center', alignItems: 'center' },
+  form: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: colors.border, gap: 12 },
   row: { flexDirection: 'row', gap: 12 },
   fieldHalf: { flex: 1 },
-  label: { color: 'rgba(255,255,255,0.4)', fontSize: 12, marginBottom: 6 },
-  input: { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 10, padding: 11, color: '#fff', fontSize: 14 },
+  label: { color: colors.textMuted, fontSize: 12, marginBottom: 6 },
+  input: { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 10, padding: 11, color: colors.text, fontSize: 14 },
   inputGreen: { borderColor: 'rgba(16,185,129,0.3)' },
   inputRed: { borderColor: 'rgba(248,113,113,0.3)' },
-  btn: { backgroundColor: '#8B5CF6', borderRadius: 12, padding: 14, alignItems: 'center' },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-  resultCard: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: 20, marginBottom: 12, borderWidth: 1, alignItems: 'center', gap: 6 },
-  resultLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 13 },
+  btn: { backgroundColor: colors.primaryStrong, borderRadius: 12, padding: 14, alignItems: 'center' },
+  btnText: { color: colors.text, fontWeight: '700', fontSize: 15 },
+  resultCard: { backgroundColor: colors.surface, borderRadius: 16, padding: 20, marginBottom: 12, borderWidth: 1, alignItems: 'center', gap: 6 },
+  resultLabel: { color: colors.textMuted, fontSize: 13 },
   resultValue: { fontSize: 32, fontWeight: '800' },
-  resultSub: { color: 'rgba(255,255,255,0.4)', fontSize: 13 },
-  chartCard: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-  chartTitle: { color: '#fff', fontWeight: '700', fontSize: 14, marginBottom: 12 },
+  resultSub: { color: colors.textMuted, fontSize: 13 },
+  chartCard: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border },
+  chartTitle: { color: colors.text, fontWeight: '700', fontSize: 14, marginBottom: 12 },
   hint: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 16, padding: 20, alignItems: 'center', gap: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
-  hintText: { color: 'rgba(255,255,255,0.4)', fontSize: 14, textAlign: 'center' },
+  hintText: { color: colors.textMuted, fontSize: 14, textAlign: 'center' },
   hintSub: { color: 'rgba(255,255,255,0.25)', fontSize: 12 },
 })

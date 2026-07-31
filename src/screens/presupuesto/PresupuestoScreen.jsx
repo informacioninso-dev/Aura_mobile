@@ -7,6 +7,7 @@ import FormModal from '../../components/ui/FormModal'
 import SwipeableRow from '../../components/ui/SwipeableRow'
 import { useTopInset } from '../../hooks/useTopInset'
 import ScreenHeader from '../../components/ui/ScreenHeader'
+import { colors } from '../../theme/theme'
 
 const FIELDS = [
   { key: 'nombre', label: 'Categoría', type: 'chips' },
@@ -74,7 +75,7 @@ export default function PresupuestoScreen() {
             const gasto = gastosMes[item.nombre] || 0
             const limite = Number(item.limite_mensual) || 0
             const pct = limite > 0 ? Math.min((gasto / limite) * 100, 100) : 0
-            const color = pct >= 100 ? '#F87171' : pct >= 80 ? '#F59E0B' : '#10B981'
+            const color = pct >= 100 ? colors.danger : pct >= 80 ? '#F59E0B' : colors.success
             return (
               <SwipeableRow onEdit={() => setModal({ visible: true, item })} onDelete={() => eliminar(item)}>
                 <View style={s.card}>
@@ -118,17 +119,17 @@ export default function PresupuestoScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F172A' },
+  root: { flex: 1, backgroundColor: colors.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', gap: 12 },
+  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.border, gap: 12 },
   icono: { fontSize: 22 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  nombre: { color: '#fff', fontSize: 14, fontWeight: '600', textTransform: 'capitalize' },
+  nombre: { color: colors.text, fontSize: 14, fontWeight: '600', textTransform: 'capitalize' },
   montos: { fontSize: 13, fontWeight: '600' },
-  limite: { color: 'rgba(255,255,255,0.35)', fontWeight: '400' },
-  barBg: { height: 4, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' },
+  limite: { color: colors.textFaint, fontWeight: '400' },
+  barBg: { height: 4, backgroundColor: colors.border, borderRadius: 2, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: 2 },
   empty: { color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: 40 },
-  fab: { position: 'absolute', bottom: 28, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: '#8B5CF6', justifyContent: 'center', alignItems: 'center', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 8 },
-  fabText: { color: '#fff', fontSize: 28, fontWeight: '300', lineHeight: 32 },
+  fab: { position: 'absolute', bottom: 28, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primaryStrong, justifyContent: 'center', alignItems: 'center', shadowColor: colors.primaryStrong, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 8 },
+  fabText: { color: colors.text, fontSize: 28, fontWeight: '300', lineHeight: 32 },
 })

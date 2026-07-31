@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { colors } from '../../theme/theme'
 import {
   View,
   Text,
@@ -420,9 +421,9 @@ export default function DashboardScreen({ navigation }) {
   )
 
   const breakdownItems = [
-    { id: 'income-fixed', label: 'Ingresos fijos', value: Number(reportSummary?.ingresos_fijos ?? fixedIncomeTotal), color: '#10B981' },
+    { id: 'income-fixed', label: 'Ingresos fijos', value: Number(reportSummary?.ingresos_fijos ?? fixedIncomeTotal), color: colors.success },
     { id: 'income-punctual', label: 'Ingresos puntuales', value: Number(reportSummary?.ingresos_puntuales ?? punctualIncomeTotal), color: '#34D399' },
-    { id: 'expense-fixed', label: 'Gastos fijos', value: Number(reportSummary?.gastos_corrientes ?? fixedExpenseTotal), color: '#F87171' },
+    { id: 'expense-fixed', label: 'Gastos fijos', value: Number(reportSummary?.gastos_corrientes ?? fixedExpenseTotal), color: colors.danger },
     { id: 'expense-installments', label: 'Cuotas / diferidos', value: Number(reportSummary?.cuotas ?? installmentTotal), color: '#FB923C' },
     { id: 'expense-punctual', label: 'Gastos puntuales', value: Number(reportSummary?.gastos_puntuales ?? punctualExpenseTotal), color: '#FCA5A5' },
   ]
@@ -456,7 +457,7 @@ export default function DashboardScreen({ navigation }) {
   )
   const tasaPct = Math.min(Math.max(tasaAhorro, 0), 100)
   const gastoPct = totalIngresos > 0 ? Math.min(100, Math.round((totalGastos / totalIngresos) * 100)) : 0
-  const gastoPctColor = gastoPct >= 90 ? '#F87171' : gastoPct >= 75 ? '#FB923C' : gastoPct >= 50 ? '#FBBF24' : '#10B981'
+  const gastoPctColor = gastoPct >= 90 ? colors.danger : gastoPct >= 75 ? '#FB923C' : gastoPct >= 50 ? '#FBBF24' : colors.success
 
   const projectionWindowCopy = projection
     ? `${projection.display_past_months || projectionPastMonths} meses reales · ${projection.months || projectionFutureMonths} proyectados`
@@ -646,7 +647,7 @@ export default function DashboardScreen({ navigation }) {
       <View style={s.balanceCard}>
         <View style={s.balanceRow}>
           <Text style={s.balanceLabel}>Balance del mes</Text>
-          <Text style={[s.balanceValue, { color: totalBalance >= 0 ? '#10B981' : '#F87171' }]}>
+          <Text style={[s.balanceValue, { color: totalBalance >= 0 ? colors.success : colors.danger }]}>
             {formatMoney(totalBalance)}
           </Text>
         </View>
@@ -656,7 +657,7 @@ export default function DashboardScreen({ navigation }) {
               <View
                 style={[
                   s.progressFill,
-                  { width: `${tasaPct}%`, backgroundColor: tasaPct >= 20 ? '#10B981' : tasaPct >= 10 ? '#F59E0B' : '#F87171' },
+                  { width: `${tasaPct}%`, backgroundColor: tasaPct >= 20 ? colors.success : tasaPct >= 10 ? '#F59E0B' : colors.danger },
                 ]}
               />
             </View>
@@ -723,7 +724,7 @@ export default function DashboardScreen({ navigation }) {
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={s.categoryAmount}>{formatMoney(cat.total)}</Text>
                 {cat.pct_limite != null && (
-                  <Text style={[s.categoryPct, { color: cat.pct_limite > 100 ? '#F87171' : '#10B981' }]}>
+                  <Text style={[s.categoryPct, { color: cat.pct_limite > 100 ? colors.danger : colors.success }]}>
                     {cat.pct_limite}%
                   </Text>
                 )}
@@ -769,7 +770,7 @@ export default function DashboardScreen({ navigation }) {
           <View style={s.projTiles}>
             <View style={[s.projTile, s.projTileWide]}>
               <Text style={s.projTileLabel}>Si sigues así, terminarías con</Text>
-              <Text style={[s.projTileVal, { color: projCierre >= 0 ? '#C487F6' : '#F87171' }]}>{formatMoney(projCierre)}</Text>
+              <Text style={[s.projTileVal, { color: projCierre >= 0 ? colors.primary : colors.danger }]}>{formatMoney(projCierre)}</Text>
               <Text style={s.projTileHint}>Saldo estimado al cierre de {projLast?.label || 'el horizonte'}</Text>
             </View>
             <View style={s.projTile}>
@@ -779,13 +780,13 @@ export default function DashboardScreen({ navigation }) {
             </View>
             <View style={s.projTile}>
               <Text style={s.projTileLabel}>Gastos variables / mes</Text>
-              <Text style={[s.projTileVal, { color: '#F87171' }]}>{formatMoney(Number(projection.variable_monthly_estimate ?? 0))}</Text>
+              <Text style={[s.projTileVal, { color: colors.danger }]}>{formatMoney(Number(projection.variable_monthly_estimate ?? 0))}</Text>
               <Text style={s.projTileHint}>{esModoSimple ? 'Con tus estimados' : 'Estimado del historial (ponderado)'}</Text>
             </View>
             {advancedProjectionEnabled ? (
               <View style={[s.projTile, s.projTileWide]}>
                 <Text style={s.projTileLabel}>Cálculo de variables</Text>
-                <Text style={[s.projTileVal, { color: '#fff' }]}>{esModoSimple ? 'Estimado' : 'Ponderado'}</Text>
+                <Text style={[s.projTileVal, { color: colors.text }]}>{esModoSimple ? 'Estimado' : 'Ponderado'}</Text>
                 <Text style={s.projTileHint}>
                   {esModoSimple
                     ? 'Usa los montos que registraste'
@@ -856,18 +857,18 @@ function DetailCard({ title, total, items, emptyLabel, accent, showAll }) {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F172A' },
+  root: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 16, paddingBottom: 40, gap: 12 },
   loaderScreen: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: colors.bg,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 12,
   },
   loaderText: { color: 'rgba(255,255,255,0.45)', fontSize: 14 },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  greeting: { color: '#fff', fontSize: 24, fontWeight: '800' },
+  greeting: { color: colors.text, fontSize: 24, fontWeight: '800' },
   subtitle: { color: 'rgba(255,255,255,0.45)', fontSize: 13, marginTop: 4 },
   planBadge: {
     backgroundColor: 'rgba(196,135,246,0.12)',
@@ -877,7 +878,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(196,135,246,0.25)',
   },
-  planText: { color: '#C487F6', fontWeight: '700', fontSize: 12 },
+  planText: { color: colors.primary, fontWeight: '700', fontSize: 12 },
   monthSwitcher: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -897,9 +898,9 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.06)',
   },
   monthNavBtnDisabled: { opacity: 0.35 },
-  monthNavArrow: { color: '#C487F6', fontSize: 24, lineHeight: 26 },
+  monthNavArrow: { color: colors.primary, fontSize: 24, lineHeight: 26 },
   monthSwitcherCenter: { flex: 1, alignItems: 'center', gap: 2 },
-  monthSwitcherLabel: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  monthSwitcherLabel: { color: colors.text, fontWeight: '700', fontSize: 16 },
   monthFutureHint: { color: '#FBBF24', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   shortcutCard: {
     flexDirection: 'row',
@@ -912,7 +913,7 @@ const s = StyleSheet.create({
     borderColor: 'rgba(139,92,246,0.25)',
   },
   shortcutIcon: { fontSize: 22 },
-  shortcutTitle: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  shortcutTitle: { color: colors.text, fontWeight: '700', fontSize: 14 },
   shortcutHint: { color: 'rgba(255,255,255,0.45)', fontSize: 12, marginTop: 2 },
   shortcutArrow: { color: 'rgba(196,135,246,0.6)', fontSize: 22 },
   errorCard: {
@@ -922,7 +923,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(248,113,113,0.22)',
   },
-  errorTitle: { color: '#F87171', fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  errorTitle: { color: colors.danger, fontSize: 14, fontWeight: '700', marginBottom: 4 },
   errorBody: { color: 'rgba(255,255,255,0.65)', fontSize: 13, lineHeight: 18 },
   emptyCard: {
     backgroundColor: 'rgba(255,255,255,0.04)',
@@ -931,17 +932,17 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
   },
-  emptyTitle: { color: '#fff', fontWeight: '700', fontSize: 16, marginBottom: 6 },
+  emptyTitle: { color: colors.text, fontWeight: '700', fontSize: 16, marginBottom: 6 },
   emptyText: { color: 'rgba(255,255,255,0.5)', fontSize: 13, lineHeight: 18 },
-  ahorroBlock: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)', gap: 8 },
-  ahorroLabel: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  ahorroBlock: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.border, gap: 8 },
+  ahorroLabel: { color: colors.text, fontSize: 13, fontWeight: '600' },
   ahorroRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  ahorroPrefix: { color: 'rgba(255,255,255,0.4)', fontSize: 16, fontWeight: '600' },
-  ahorroInput: { flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 12, paddingVertical: 10, color: '#fff', fontSize: 15 },
+  ahorroPrefix: { color: colors.textMuted, fontSize: 16, fontWeight: '600' },
+  ahorroInput: { flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 12, paddingVertical: 10, color: colors.text, fontSize: 15 },
   ahorroBtn: { backgroundColor: '#16C79A', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 11, minWidth: 92, alignItems: 'center' },
   ahorroBtnOff: { opacity: 0.4 },
   ahorroBtnText: { color: '#07131F', fontSize: 14, fontWeight: '800' },
-  ahorroHint: { color: 'rgba(255,255,255,0.35)', fontSize: 11, lineHeight: 15 },
+  ahorroHint: { color: colors.textFaint, fontSize: 11, lineHeight: 15 },
   heroCard: {
     backgroundColor: 'rgba(196,135,246,0.08)',
     borderRadius: 18,
@@ -952,7 +953,7 @@ const s = StyleSheet.create({
   heroHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   heroLabel: { color: 'rgba(255,255,255,0.55)', fontSize: 13 },
   heroBadge: {
-    color: '#C487F6',
+    color: colors.primary,
     backgroundColor: 'rgba(196,135,246,0.12)',
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -972,7 +973,7 @@ const s = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: colors.border,
   },
   availableLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 12, marginBottom: 6, textTransform: 'uppercase' },
   availableValue: { fontSize: 26, fontWeight: '900', marginBottom: 4 },
@@ -990,12 +991,12 @@ const s = StyleSheet.create({
   summaryLoadingText: { color: 'rgba(255,255,255,0.48)', fontSize: 12, flex: 1 },
   grid: { flexDirection: 'row', gap: 12 },
   quickRow: { flexDirection: 'row', gap: 8 },
-  quickBtn: { flex: 1, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 14, paddingVertical: 12, alignItems: 'center', gap: 4, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  quickBtn: { flex: 1, backgroundColor: colors.surface, borderRadius: 14, paddingVertical: 12, alignItems: 'center', gap: 4, borderWidth: 1, borderColor: colors.border },
   quickIcon: { fontSize: 20 },
   quickLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '600' },
   statCard: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderRadius: 16,
     padding: 14,
@@ -1005,25 +1006,25 @@ const s = StyleSheet.create({
   statLabel: { color: 'rgba(255,255,255,0.42)', fontSize: 12 },
   statDetail: { fontSize: 11, fontWeight: '700', marginTop: 6, opacity: 0.85 },
   balanceCard: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: colors.border,
   },
   balanceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   balanceLabel: { color: 'rgba(255,255,255,0.55)', fontSize: 14 },
   balanceValue: { fontSize: 22, fontWeight: '800' },
   progressTrack: {
     height: 6,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: colors.border,
     borderRadius: 999,
     overflow: 'hidden',
     marginBottom: 8,
   },
   progressFill: { height: '100%', borderRadius: 999 },
   tasaText: { color: 'rgba(255,255,255,0.42)', fontSize: 12 },
-  tasaStrong: { color: '#fff', fontWeight: '700' },
+  tasaStrong: { color: colors.text, fontWeight: '700' },
   healthCard: {
     backgroundColor: 'rgba(255,255,255,0.04)',
     borderRadius: 16,
@@ -1036,7 +1037,7 @@ const s = StyleSheet.create({
   healthPct: { fontWeight: '800', fontSize: 14 },
   healthTrack: {
     height: 8,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: colors.border,
     borderRadius: 999,
     overflow: 'hidden',
     marginBottom: 8,
@@ -1064,32 +1065,32 @@ const s = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.07)',
   },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { color: '#fff', fontWeight: '700', fontSize: 15 },
-  sectionHint: { color: 'rgba(255,255,255,0.35)', fontSize: 11 },
+  sectionTitle: { color: colors.text, fontWeight: '700', fontSize: 15 },
+  sectionHint: { color: colors.textFaint, fontSize: 11 },
   sectionTotal: { fontSize: 14, fontWeight: '800' },
   projectionCopy: { color: 'rgba(255,255,255,0.45)', fontSize: 12, marginBottom: 12 },
   projTiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
   projTile: {
     flexGrow: 1, flexBasis: '47%', minWidth: 130,
     backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1, borderColor: colors.border,
     borderRadius: 12, padding: 12,
   },
   projTileWide: { flexBasis: '100%' },
   projTileLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.3 },
-  projTileVal: { color: '#fff', fontSize: 18, fontWeight: '800', marginTop: 3 },
-  projTileHint: { color: 'rgba(255,255,255,0.4)', fontSize: 11, marginTop: 3, lineHeight: 15 },
+  projTileVal: { color: colors.text, fontSize: 18, fontWeight: '800', marginTop: 3 },
+  projTileHint: { color: colors.textMuted, fontSize: 11, marginTop: 3, lineHeight: 15 },
   detailRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 10 },
-  detailLabel: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  detailLabel: { color: colors.text, fontSize: 13, fontWeight: '600' },
   detailMeta: { color: 'rgba(255,255,255,0.38)', fontSize: 11, marginTop: 2 },
   detailAmount: { fontSize: 13, fontWeight: '700' },
-  moreText: { color: 'rgba(255,255,255,0.35)', fontSize: 12, marginTop: 2 },
-  emptyListText: { color: 'rgba(255,255,255,0.4)', fontSize: 13, lineHeight: 18 },
+  moreText: { color: colors.textFaint, fontSize: 12, marginTop: 2 },
+  emptyListText: { color: colors.textMuted, fontSize: 13, lineHeight: 18 },
   categoryRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 12 },
   categoryIcon: { fontSize: 17, width: 24 },
-  categoryName: { color: '#fff', fontSize: 13, fontWeight: '600', textTransform: 'capitalize' },
-  categoryLimit: { color: 'rgba(255,255,255,0.35)', fontSize: 11, marginTop: 2 },
-  categoryAmount: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  categoryName: { color: colors.text, fontSize: 13, fontWeight: '600', textTransform: 'capitalize' },
+  categoryLimit: { color: colors.textFaint, fontSize: 11, marginTop: 2 },
+  categoryAmount: { color: colors.text, fontWeight: '700', fontSize: 13 },
   categoryPct: { fontSize: 11, fontWeight: '700', marginTop: 2 },
   topExpenseRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
   topExpenseIndex: {
@@ -1100,10 +1101,10 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  topExpenseIndexText: { color: '#F87171', fontWeight: '800', fontSize: 11 },
-  topExpenseLabel: { color: '#fff', fontWeight: '600', fontSize: 13 },
+  topExpenseIndexText: { color: colors.danger, fontWeight: '800', fontSize: 11 },
+  topExpenseLabel: { color: colors.text, fontWeight: '600', fontSize: 13 },
   topExpenseMeta: { color: 'rgba(255,255,255,0.38)', fontSize: 11, marginTop: 2 },
-  topExpenseAmount: { color: '#F87171', fontWeight: '700', fontSize: 13 },
+  topExpenseAmount: { color: colors.danger, fontWeight: '700', fontSize: 13 },
   logoutBtn: {
     marginTop: 4,
     backgroundColor: 'rgba(248,113,113,0.10)',
@@ -1113,5 +1114,5 @@ const s = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
   },
-  logoutText: { color: '#F87171', fontWeight: '700', fontSize: 14 },
+  logoutText: { color: colors.danger, fontWeight: '700', fontSize: 14 },
 })

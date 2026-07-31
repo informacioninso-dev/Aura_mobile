@@ -7,6 +7,7 @@ import FormModal from '../../components/ui/FormModal'
 import SwipeableRow from '../../components/ui/SwipeableRow'
 import { useTopInset } from '../../hooks/useTopInset'
 import ScreenHeader from '../../components/ui/ScreenHeader'
+import { colors } from '../../theme/theme'
 
 const FIELDS = [
   { key: 'descripcion', label: 'Descripción', type: 'text', placeholder: 'Ej: Crédito auto' },
@@ -112,16 +113,16 @@ export default function DeferidosScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F172A' },
+  root: { flex: 1, backgroundColor: colors.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: 'rgba(196,135,246,0.2)' },
-  desc: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  meta: { color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 2 },
-  tag: { color: '#C487F6', fontSize: 11, marginTop: 4 },
-  cuota: { color: '#C487F6', fontWeight: '700', fontSize: 16 },
-  cuotaLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: '400' },
-  total: { color: 'rgba(255,255,255,0.35)', fontSize: 11, marginTop: 2 },
+  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.borderAccent },
+  desc: { color: colors.text, fontSize: 15, fontWeight: '600' },
+  meta: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+  tag: { color: colors.primary, fontSize: 11, marginTop: 4 },
+  cuota: { color: colors.primary, fontWeight: '700', fontSize: 16 },
+  cuotaLabel: { color: colors.textMuted, fontSize: 12, fontWeight: '400' },
+  total: { color: colors.textFaint, fontSize: 11, marginTop: 2 },
   empty: { color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: 40 },
-  fab: { position: 'absolute', bottom: 28, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: '#8B5CF6', justifyContent: 'center', alignItems: 'center', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 8 },
-  fabText: { color: '#fff', fontSize: 28, fontWeight: '300', lineHeight: 32 },
+  fab: { position: 'absolute', bottom: 28, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primaryStrong, justifyContent: 'center', alignItems: 'center', shadowColor: colors.primaryStrong, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 8 },
+  fabText: { color: colors.text, fontSize: 28, fontWeight: '300', lineHeight: 32 },
 })

@@ -6,6 +6,7 @@ import { getApiErrorMessage } from '../../api/errors'
 import { formatMoney } from '../../utils/formatters'
 import { useTopInset } from '../../hooks/useTopInset'
 import ScreenHeader from '../../components/ui/ScreenHeader'
+import { colors } from '../../theme/theme'
 
 function featureLabel(feature) {
   if (feature.value_type === 'bool') return feature.value_bool ? feature.name : null
@@ -131,32 +132,32 @@ export default function PlanesScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F172A' },
+  root: { flex: 1, backgroundColor: colors.bg },
   center: { justifyContent: 'center', alignItems: 'center' },
-  errorMsg: { color: '#F87171', fontSize: 13, marginBottom: 12, textAlign: 'center' },
+  errorMsg: { color: colors.danger, fontSize: 13, marginBottom: 12, textAlign: 'center' },
   card: {
     backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 18, padding: 20,
-    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.08)', marginBottom: 16, position: 'relative',
+    borderWidth: 1.5, borderColor: colors.border, marginBottom: 16, position: 'relative',
   },
   cardActual: { borderColor: 'rgba(196,135,246,0.5)', backgroundColor: 'rgba(196,135,246,0.08)' },
   badge: {
-    position: 'absolute', top: 14, right: 14, backgroundColor: 'rgba(196,135,246,0.2)',
+    position: 'absolute', top: 14, right: 14, backgroundColor: colors.borderAccent,
     borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3,
   },
-  badgeText: { color: '#C487F6', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
-  planName: { color: '#fff', fontSize: 18, fontWeight: '700', marginBottom: 4, paddingRight: 90 },
+  badgeText: { color: colors.primary, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  planName: { color: colors.text, fontSize: 18, fontWeight: '700', marginBottom: 4, paddingRight: 90 },
   planDesc: { color: 'rgba(255,255,255,0.5)', fontSize: 13, marginBottom: 12 },
   priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginBottom: 14 },
-  priceFree: { color: '#fff', fontSize: 26, fontWeight: '800' },
-  priceValue: { color: '#fff', fontSize: 26, fontWeight: '800' },
+  priceFree: { color: colors.text, fontSize: 26, fontWeight: '800' },
+  priceValue: { color: colors.text, fontSize: 26, fontWeight: '800' },
   pricePeriod: { color: 'rgba(255,255,255,0.55)', fontSize: 13 },
   featuresList: { gap: 8, marginBottom: 16 },
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  featureCheck: { color: '#C487F6', fontSize: 13, fontWeight: '700' },
+  featureCheck: { color: colors.primary, fontSize: 13, fontWeight: '700' },
   featureText: { color: 'rgba(255,255,255,0.75)', fontSize: 13, flex: 1 },
   btn: { borderRadius: 12, paddingVertical: 13, alignItems: 'center', justifyContent: 'center' },
-  btnPrimary: { backgroundColor: '#8B5CF6' },
+  btnPrimary: { backgroundColor: colors.primaryStrong },
   btnDisabled: { backgroundColor: 'rgba(255,255,255,0.06)' },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  btnTextDisabled: { color: 'rgba(255,255,255,0.35)', fontWeight: '700', fontSize: 14 },
+  btnText: { color: colors.text, fontWeight: '700', fontSize: 14 },
+  btnTextDisabled: { color: colors.textFaint, fontWeight: '700', fontSize: 14 },
 })

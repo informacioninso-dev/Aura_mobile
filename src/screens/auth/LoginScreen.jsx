@@ -5,6 +5,7 @@ import { getApiErrorMessage } from '../../api/errors'
 import { getAccess, getRefresh } from '../../api/authStorage'
 import { useBiometrics } from '../../hooks/useBiometrics'
 import { registrarNotificaciones } from '../../hooks/useNotifications'
+import { colors } from '../../theme/theme'
 
 export default function LoginScreen({ navigation }) {
   const { login, restoreSession } = useAuth()
@@ -135,25 +136,25 @@ export default function LoginScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F172A', justifyContent: 'center', padding: 24 },
+  root: { flex: 1, backgroundColor: colors.bg, justifyContent: 'center', padding: 24 },
   card: { gap: 12 },
   logoWrap: { alignItems: 'center', marginBottom: 8 },
   logoCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(196,135,246,0.15)', borderWidth: 1, borderColor: 'rgba(196,135,246,0.3)', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  logoSymbol: { color: '#C487F6', fontSize: 28 },
-  logo: { color: '#C487F6', fontSize: 32, fontWeight: '800', letterSpacing: 6 },
-  subtitle: { color: 'rgba(255,255,255,0.35)', fontSize: 14, textAlign: 'center', marginBottom: 8 },
-  input: { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 12, padding: 14, color: '#fff', fontSize: 15 },
+  logoSymbol: { color: colors.primary, fontSize: 28 },
+  logo: { color: colors.primary, fontSize: 32, fontWeight: '800', letterSpacing: 6 },
+  subtitle: { color: colors.textFaint, fontSize: 14, textAlign: 'center', marginBottom: 8 },
+  input: { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 12, padding: 14, color: colors.text, fontSize: 15 },
   passWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 12 },
-  passInput: { flex: 1, padding: 14, color: '#fff', fontSize: 15 },
+  passInput: { flex: 1, padding: 14, color: colors.text, fontSize: 15 },
   eyeBtn: { padding: 14 },
   eyeIcon: { fontSize: 18 },
-  btn: { backgroundColor: '#8B5CF6', borderRadius: 12, padding: 15, alignItems: 'center', marginTop: 4 },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  btn: { backgroundColor: colors.primaryStrong, borderRadius: 12, padding: 15, alignItems: 'center', marginTop: 4 },
+  btnText: { color: colors.text, fontWeight: '700', fontSize: 16 },
   bioBtn: { borderWidth: 1, borderColor: 'rgba(196,135,246,0.3)', borderRadius: 12, padding: 13, alignItems: 'center', backgroundColor: 'rgba(196,135,246,0.08)' },
-  bioBtnText: { color: '#C487F6', fontWeight: '600', fontSize: 14 },
-  error: { color: '#F87171', fontSize: 13, textAlign: 'center' },
+  bioBtnText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
+  error: { color: colors.danger, fontSize: 13, textAlign: 'center' },
   linkButton: { alignItems: 'center', paddingVertical: 5 },
-  linkText: { color: '#C487F6', fontSize: 12, fontWeight: '600' },
+  linkText: { color: colors.primary, fontSize: 12, fontWeight: '600' },
   registerRow: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', marginTop: 2 },
   registerCopy: { color: 'rgba(255,255,255,0.38)', fontSize: 12 },
   registerLink: { color: '#16C79A', fontSize: 12, fontWeight: '800' },

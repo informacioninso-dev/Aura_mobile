@@ -5,6 +5,7 @@ import api from '../../api/client'
 import { getApiErrorMessage } from '../../api/errors'
 import { useAuth } from '../../context/AuthContext'
 import { useTopInset } from '../../hooks/useTopInset'
+import { colors } from '../../theme/theme'
 
 function extraerParams(url) {
   const queryIndex = url.indexOf('?')
@@ -74,7 +75,7 @@ export default function PagoScreen({ route, navigation }) {
               <ActivityIndicator color="#C487F6" size="large" />
             </View>
           )}
-          style={{ flex: 1, backgroundColor: '#0F172A' }}
+          style={{ flex: 1, backgroundColor: colors.bg }}
         />
       </View>
     )
@@ -95,7 +96,7 @@ export default function PagoScreen({ route, navigation }) {
         <Text style={s.statusIcon}>✅</Text>
         <Text style={s.statusTitle}>¡Pago exitoso!</Text>
         <Text style={s.statusText}>
-          Tu plan <Text style={{ color: '#C487F6', fontWeight: '700' }}>{planName}</Text> ha sido activado.
+          Tu plan <Text style={{ color: colors.primary, fontWeight: '700' }}>{planName}</Text> ha sido activado.
         </Text>
         <TouchableOpacity style={s.primaryBtn} onPress={() => navigation.navigate('Planes')}>
           <Text style={s.primaryBtnText}>Listo</Text>
@@ -130,18 +131,18 @@ export default function PagoScreen({ route, navigation }) {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F172A' },
+  root: { flex: 1, backgroundColor: colors.bg },
   center: { justifyContent: 'center', alignItems: 'center', gap: 14, paddingHorizontal: 32 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingBottom: 12,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)',
+    borderBottomWidth: 1, borderBottomColor: colors.border,
   },
-  headerTitle: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  headerTitle: { color: colors.text, fontWeight: '700', fontSize: 16 },
   headerClose: { color: 'rgba(255,255,255,0.5)', fontSize: 18, fontWeight: '700', padding: 4 },
   statusIcon: { fontSize: 48 },
-  statusTitle: { color: '#fff', fontSize: 20, fontWeight: '700' },
+  statusTitle: { color: colors.text, fontSize: 20, fontWeight: '700' },
   statusText: { color: 'rgba(255,255,255,0.6)', fontSize: 14, textAlign: 'center' },
-  primaryBtn: { backgroundColor: '#8B5CF6', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 32, marginTop: 8 },
-  primaryBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  primaryBtn: { backgroundColor: colors.primaryStrong, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 32, marginTop: 8 },
+  primaryBtnText: { color: colors.text, fontWeight: '700', fontSize: 15 },
 })

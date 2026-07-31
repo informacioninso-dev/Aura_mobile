@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { colors } from '../../theme/theme'
 import {
   Modal, View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator,
 } from 'react-native'
@@ -101,20 +102,20 @@ export default function NotificationBell() {
 const s = StyleSheet.create({
   bell: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center' },
   bellIcon: { fontSize: 18 },
-  badge: { position: 'absolute', top: 2, right: 2, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: '#F87171', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3 },
-  badgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  badge: { position: 'absolute', top: 2, right: 2, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: colors.danger, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3 },
+  badgeText: { color: colors.text, fontSize: 10, fontWeight: '800' },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: '#0F1B35', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 30, maxHeight: '80%' },
   handle: { width: 40, height: 4, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  title: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  markAll: { color: '#C487F6', fontSize: 13, fontWeight: '700' },
-  empty: { color: 'rgba(255,255,255,0.4)', textAlign: 'center', paddingVertical: 28, fontSize: 14 },
+  title: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  markAll: { color: colors.primary, fontSize: 13, fontWeight: '700' },
+  empty: { color: colors.textMuted, textAlign: 'center', paddingVertical: 28, fontSize: 14 },
   item: { paddingVertical: 12, paddingHorizontal: 12, borderRadius: 12, marginBottom: 8, backgroundColor: 'rgba(255,255,255,0.03)' },
   itemUnread: { backgroundColor: 'rgba(196,135,246,0.08)' },
   itemHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#C487F6' },
-  itemTitle: { color: '#fff', fontSize: 14, fontWeight: '700', flexShrink: 1 },
+  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.primary },
+  itemTitle: { color: colors.text, fontSize: 14, fontWeight: '700', flexShrink: 1 },
   itemTitleRead: { color: 'rgba(255,255,255,0.55)', fontWeight: '600' },
   itemMsg: { color: 'rgba(255,255,255,0.55)', fontSize: 13, marginTop: 3, lineHeight: 18 },
   close: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 8 },

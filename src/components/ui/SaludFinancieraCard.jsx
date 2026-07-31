@@ -4,6 +4,7 @@ import Svg, { Circle } from 'react-native-svg'
 
 import api from '../../api/client'
 import { useAuth } from '../../context/AuthContext'
+import { colors } from '../../theme/theme'
 
 function MiniRing({ score, color, size = 64 }) {
   const stroke = 7
@@ -52,7 +53,7 @@ export default function SaludFinancieraCard({ navigation }) {
 
   if (!habilitado || !data?.disponible) return null
 
-  const color = data?.banda?.color || '#C487F6'
+  const color = data?.banda?.color || colors.primary
 
   return (
     <TouchableOpacity
@@ -87,5 +88,5 @@ const s = StyleSheet.create({
   kicker: { color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
   banda: { fontSize: 17, fontWeight: '800', marginTop: 1 },
   sub: { color: 'rgba(255,255,255,0.45)', fontSize: 11.5, marginTop: 2, lineHeight: 15 },
-  verMas: { color: '#C487F6', fontSize: 12, fontWeight: '700', textAlign: 'right' },
+  verMas: { color: colors.primary, fontSize: 12, fontWeight: '700', textAlign: 'right' },
 })

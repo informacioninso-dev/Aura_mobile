@@ -4,6 +4,7 @@ import Svg, { Circle, Line, Path, Rect, Text as SvgText } from 'react-native-svg
 
 import api from '../../api/client'
 import { formatMoney, formatMoneyAxis } from '../../utils/formatters'
+import { colors } from '../../theme/theme'
 
 const H = 180
 const PL = 46
@@ -13,8 +14,8 @@ const PB = 28
 const MIN_WIDTH = 260
 const POINT_SPACING = 48
 
-const ING_COLOR = '#10B981'
-const GASTO_COLOR = '#F87171'
+const ING_COLOR = colors.success
+const GASTO_COLOR = colors.danger
 
 const range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => start + i)
 
@@ -320,7 +321,7 @@ export default function ProjectionChart({
             <Text style={s.detailK}>gastos</Text>
           </View>
           <View style={s.detailRow}>
-            <Text style={[s.detailVal, { color: activePoint.saldoMes >= 0 ? '#C487F6' : '#F87171' }]}>{formatMoney(activePoint.saldoMes)}</Text>
+            <Text style={[s.detailVal, { color: activePoint.saldoMes >= 0 ? colors.primary : colors.danger }]}>{formatMoney(activePoint.saldoMes)}</Text>
             <Text style={s.detailK}>te queda</Text>
           </View>
         </View>
@@ -356,7 +357,7 @@ const s = StyleSheet.create({
     paddingVertical: 16,
   },
   emptyText: {
-    color: 'rgba(255,255,255,0.4)',
+    color: colors.textMuted,
     fontSize: 12,
     textAlign: 'center',
     lineHeight: 18,
@@ -369,7 +370,7 @@ const s = StyleSheet.create({
     gap: 12,
   },
   title: {
-    color: '#fff',
+    color: colors.text,
     fontWeight: '700',
     fontSize: 15,
   },
@@ -394,7 +395,7 @@ const s = StyleSheet.create({
     borderRadius: 4,
   },
   legendText: {
-    color: 'rgba(255,255,255,0.4)',
+    color: colors.textMuted,
     fontSize: 12,
   },
   legendHint: {
@@ -411,7 +412,7 @@ const s = StyleSheet.create({
     borderColor: 'rgba(196,135,246,0.18)',
   },
   detailLabel: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 13,
     fontWeight: '700',
     marginBottom: 6,

@@ -8,6 +8,7 @@ import { getApiErrorMessage } from '../../api/errors'
 import { formatMoney, formatDate } from '../../utils/formatters'
 import { useTopInset } from '../../hooks/useTopInset'
 import ScreenHeader from '../../components/ui/ScreenHeader'
+import { colors } from '../../theme/theme'
 
 const TEMPLATE_CSV = `fecha,descripcion,monto,tipo,categoria
 2025-12-01,Sueldo diciembre,1500000,ingreso,
@@ -18,7 +19,7 @@ const TEMPLATE_CSV = `fecha,descripcion,monto,tipo,categoria
 
 function FilaItem({ fila, selected, onToggle }) {
   const esIngreso = fila.tipo === 'ingreso'
-  const color = esIngreso ? '#10B981' : '#F87171'
+  const color = esIngreso ? colors.success : colors.danger
   return (
     <TouchableOpacity style={[s.filaRow, !selected && s.filaRowOff]} onPress={onToggle} activeOpacity={0.7}>
       <View style={[s.checkbox, selected && s.checkboxOn]}>
@@ -145,11 +146,11 @@ export default function ImportarScreen() {
         <Text style={s.successTitle}>Todo importado</Text>
         <View style={s.statsRow}>
           <View style={s.statBox}>
-            <Text style={[s.statValue, { color: '#10B981' }]}>{resultado.ingresos_creados}</Text>
+            <Text style={[s.statValue, { color: colors.success }]}>{resultado.ingresos_creados}</Text>
             <Text style={s.statLabel}>ingresos puntuales</Text>
           </View>
           <View style={s.statBox}>
-            <Text style={[s.statValue, { color: '#F87171' }]}>{resultado.gastos_creados}</Text>
+            <Text style={[s.statValue, { color: colors.danger }]}>{resultado.gastos_creados}</Text>
             <Text style={s.statLabel}>gastos puntuales</Text>
           </View>
         </View>
@@ -185,7 +186,7 @@ export default function ImportarScreen() {
                 <View style={s.chipsWrap}>
                   {Object.entries(preview.mapa_columnas).map(([campo, columna]) => (
                     <View key={campo} style={s.chip}>
-                      <Text style={s.chipText}><Text style={{ color: '#C487F6' }}>{campo}</Text> ← {columna}</Text>
+                      <Text style={s.chipText}><Text style={{ color: colors.primary }}>{campo}</Text> ← {columna}</Text>
                     </View>
                   ))}
                 </View>
@@ -276,31 +277,31 @@ export default function ImportarScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0F172A', paddingHorizontal: 16 },
+  root: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: 16 },
   center: { justifyContent: 'center', alignItems: 'center', gap: 12, paddingHorizontal: 32 },
-  title: { color: '#fff', fontSize: 22, fontWeight: '700', marginBottom: 2 },
-  sub: { color: 'rgba(255,255,255,0.35)', fontSize: 13, marginBottom: 16 },
+  title: { color: colors.text, fontSize: 22, fontWeight: '700', marginBottom: 2 },
+  sub: { color: colors.textFaint, fontSize: 13, marginBottom: 16 },
   card: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 14, padding: 14,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', marginBottom: 10,
+    backgroundColor: colors.surface, borderRadius: 14, padding: 14,
+    borderWidth: 1, borderColor: colors.border, marginBottom: 10,
   },
   cardIcon: { fontSize: 22 },
-  cardTitle: { color: '#fff', fontWeight: '600', fontSize: 14 },
-  cardHint: { color: 'rgba(255,255,255,0.35)', fontSize: 12, marginTop: 2 },
+  cardTitle: { color: colors.text, fontWeight: '600', fontSize: 14 },
+  cardHint: { color: colors.textFaint, fontSize: 12, marginTop: 2 },
   cardArrow: { color: 'rgba(196,135,246,0.6)', fontSize: 22 },
   primaryBtn: {
-    backgroundColor: '#8B5CF6', borderRadius: 14, paddingVertical: 14,
+    backgroundColor: colors.primaryStrong, borderRadius: 14, paddingVertical: 14,
     alignItems: 'center', justifyContent: 'center', marginTop: 8,
   },
-  primaryBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  primaryBtnText: { color: colors.text, fontWeight: '700', fontSize: 15 },
   secondaryBtn: {
     backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 20,
     alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
   },
   secondaryBtnText: { color: 'rgba(255,255,255,0.7)', fontWeight: '600', fontSize: 15 },
   btnDisabled: { opacity: 0.4 },
-  errorMsg: { color: '#F87171', fontSize: 13, marginBottom: 8 },
+  errorMsg: { color: colors.danger, fontSize: 13, marginBottom: 8 },
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
   chip: {
     backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 8,
@@ -311,29 +312,29 @@ const s = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     marginTop: 16, marginBottom: 4,
   },
-  filasHeaderText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  linkText: { color: '#C487F6', fontSize: 12, fontWeight: '600' },
+  filasHeaderText: { color: colors.text, fontWeight: '700', fontSize: 14 },
+  linkText: { color: colors.primary, fontSize: 12, fontWeight: '600' },
   filaRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 12,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: colors.surface, borderRadius: 12, padding: 12,
+    borderWidth: 1, borderColor: colors.border,
   },
   filaRowOff: { opacity: 0.4 },
   checkbox: {
     width: 20, height: 20, borderRadius: 6, borderWidth: 1.5,
     borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center',
   },
-  checkboxOn: { backgroundColor: '#8B5CF6', borderColor: '#8B5CF6' },
-  checkboxMark: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  filaDesc: { color: '#fff', fontWeight: '600', fontSize: 13 },
-  filaMeta: { color: 'rgba(255,255,255,0.35)', fontSize: 11, marginTop: 2, textTransform: 'capitalize' },
+  checkboxOn: { backgroundColor: colors.primaryStrong, borderColor: colors.primaryStrong },
+  checkboxMark: { color: colors.text, fontSize: 12, fontWeight: '700' },
+  filaDesc: { color: colors.text, fontWeight: '600', fontSize: 13 },
+  filaMeta: { color: colors.textFaint, fontSize: 11, marginTop: 2, textTransform: 'capitalize' },
   filaMonto: { fontWeight: '700', fontSize: 13 },
   empty: { color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: 24 },
   errorCard: {
     backgroundColor: 'rgba(248,113,113,0.05)', borderRadius: 12, padding: 14,
     borderWidth: 1, borderColor: 'rgba(248,113,113,0.15)', marginTop: 12,
   },
-  errorTitle: { color: '#F87171', fontWeight: '700', fontSize: 13, marginBottom: 6 },
+  errorTitle: { color: colors.danger, fontWeight: '700', fontSize: 13, marginBottom: 6 },
   errorLine: { color: 'rgba(255,255,255,0.5)', fontSize: 12, marginBottom: 4 },
   errorMore: { color: 'rgba(255,255,255,0.3)', fontSize: 12 },
   footerBar: {
@@ -341,10 +342,10 @@ const s = StyleSheet.create({
     flexDirection: 'row', gap: 10,
   },
   successIcon: { fontSize: 48 },
-  successTitle: { color: '#fff', fontSize: 20, fontWeight: '700' },
+  successTitle: { color: colors.text, fontSize: 20, fontWeight: '700' },
   statsRow: { flexDirection: 'row', gap: 32, marginVertical: 8 },
   statBox: { alignItems: 'center' },
   statValue: { fontSize: 28, fontWeight: '700' },
   statLabel: { color: 'rgba(255,255,255,0.45)', fontSize: 13, marginTop: 2 },
-  successHint: { color: 'rgba(255,255,255,0.35)', fontSize: 12, textAlign: 'center', marginBottom: 8 },
+  successHint: { color: colors.textFaint, fontSize: 12, textAlign: 'center', marginBottom: 8 },
 })

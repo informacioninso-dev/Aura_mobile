@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native'
 import Swipeable from 'react-native-gesture-handler/Swipeable'
+import { colors } from '../../theme/theme'
 
 export default function SwipeableRow({ children, onEdit, onDelete }) {
   const swipeRef = useRef(null)
@@ -30,5 +31,5 @@ const s = StyleSheet.create({
   actions: { flexDirection: 'row', width: 128 },
   editBtn: { flex: 1, backgroundColor: '#3B82F6', justifyContent: 'center', alignItems: 'center', borderRadius: 12, marginRight: 4 },
   deleteBtn: { flex: 1, backgroundColor: '#EF4444', justifyContent: 'center', alignItems: 'center', borderRadius: 12 },
-  actionText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  actionText: { color: colors.text, fontWeight: '700', fontSize: 13 },
 })
