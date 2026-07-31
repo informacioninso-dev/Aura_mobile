@@ -152,7 +152,7 @@ export default function GastosScreen({ route, navigation }) {
 
   return (
     <GestureHandlerRootView style={s.root}>
-      <Text style={s.title}>Gastos</Text>
+      <Text style={s.title}>Lo que gastas</Text>
 
       <View style={s.tabs}>
         {TABS.map((t) => (

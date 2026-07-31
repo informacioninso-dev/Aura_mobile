@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useState } from 'react'
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native'
-import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg'
+import Svg, { Circle, Line, Path, Rect, Text as SvgText } from 'react-native-svg'
 
 import api from '../../api/client'
 import { formatMoney, formatMoneyAxis } from '../../utils/formatters'
@@ -56,6 +56,7 @@ export default function ProjectionChart({
   const [internalData, setInternalData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [viewportWidth, setViewportWidth] = useState(MIN_WIDTH)
+  const [selectedIdx, setSelectedIdx] = useState(null)
   const usingExternalData = externalData !== undefined
 
   useEffect(() => {
@@ -112,8 +113,18 @@ export default function ProjectionChart({
       label: point.label,
       ingValue: advancedProjectionEnabled ? opening + ingMes : ingMes,
       gastoMes,
+      ingMes,
+      saldoMes: opening + ingMes - gastoMes,
+      isReal: Boolean(point.is_real),
     }
   })
+
+  // Punto activo (el que se muestra en el detalle): el que tocaste o, por
+  // defecto, el mes actual.
+  const activeIdx = (selectedIdx != null && selectedIdx < chartSeries.length)
+    ? selectedIdx
+    : (currentIdx >= 0 ? currentIdx : chartSeries.length - 1)
+  const activePoint = chartSeries[activeIdx]
 
   const realIndices = lastRealIdx >= 0 ? range(0, Math.min(lastRealIdx + 1, chartSeries.length - 1)) : []
   const projIndices = lastRealIdx >= 0
@@ -240,10 +251,33 @@ export default function ProjectionChart({
               >
                 Hoy
               </SvgText>
-              <Circle cx={getX(currentIdx)} cy={getY(chartSeries[currentIdx].ingValue)} r="4" fill={ING_COLOR} />
-              <Circle cx={getX(currentIdx)} cy={getY(chartSeries[currentIdx].gastoMes)} r="4" fill={GASTO_COLOR} />
             </>
           ) : null}
+
+          {/* Punto activo (tocado o el mes actual): guia + circulos resaltados */}
+          {activeIdx >= 0 ? (
+            <>
+              <Line
+                x1={getX(activeIdx)} y1={PT} x2={getX(activeIdx)} y2={H - PB}
+                stroke="rgba(196,135,246,0.55)" strokeWidth="1.5"
+              />
+              <Circle cx={getX(activeIdx)} cy={getY(activePoint.ingValue)} r="5" fill={ING_COLOR} stroke="#0F1B35" strokeWidth="1.5" />
+              <Circle cx={getX(activeIdx)} cy={getY(activePoint.gastoMes)} r="5" fill={GASTO_COLOR} stroke="#0F1B35" strokeWidth="1.5" />
+            </>
+          ) : null}
+
+          {/* Zonas tactiles: tocar cerca de un mes lo selecciona */}
+          {chartSeries.map((_, index) => (
+            <Rect
+              key={`tap-${index}`}
+              x={getX(index) - POINT_SPACING / 2}
+              y={PT}
+              width={POINT_SPACING}
+              height={H - PT - PB}
+              fill="transparent"
+              onPress={() => setSelectedIdx(index)}
+            />
+          ))}
 
           {labelIndices.map((index) => (
             <SvgText
@@ -272,15 +306,29 @@ export default function ProjectionChart({
         <Text style={s.legendHint}>Linea solida: real · punteada: proyectado</Text>
       </View>
 
-      {currentIdx >= 0 ? (
-        <Text style={s.hoy}>
-          Hoy: {formatMoney(chartSeries[currentIdx].ingValue)} ingresos · {formatMoney(chartSeries[currentIdx].gastoMes)} gastos
-        </Text>
+      {activePoint ? (
+        <View style={s.detail}>
+          <Text style={s.detailLabel}>
+            {activePoint.label}{activeIdx === currentIdx ? ' · Hoy' : activePoint.isReal ? ' · real' : ' · proyectado'}
+          </Text>
+          <View style={s.detailRow}>
+            <Text style={[s.detailVal, { color: ING_COLOR }]}>{formatMoney(activePoint.ingValue)}</Text>
+            <Text style={s.detailK}>{advancedProjectionEnabled ? 'disponible' : 'ingresos'}</Text>
+          </View>
+          <View style={s.detailRow}>
+            <Text style={[s.detailVal, { color: GASTO_COLOR }]}>{formatMoney(activePoint.gastoMes)}</Text>
+            <Text style={s.detailK}>gastos</Text>
+          </View>
+          <View style={s.detailRow}>
+            <Text style={[s.detailVal, { color: activePoint.saldoMes >= 0 ? '#C487F6' : '#F87171' }]}>{formatMoney(activePoint.saldoMes)}</Text>
+            <Text style={s.detailK}>te queda</Text>
+          </View>
+        </View>
       ) : null}
 
-      {canScroll ? (
-        <Text style={s.scrollHint}>Desliza la grafica para ver mas meses.</Text>
-      ) : null}
+      <Text style={s.scrollHint}>
+        Toca la gráfica para ver cada mes.{canScroll ? ' Desliza para ver más.' : ''}
+      </Text>
     </View>
   )
 }
@@ -354,10 +402,33 @@ const s = StyleSheet.create({
     fontSize: 11,
     marginLeft: 'auto',
   },
-  hoy: {
-    color: 'rgba(255,255,255,0.5)',
+  detail: {
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(196,135,246,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(196,135,246,0.18)',
+  },
+  detailLabel: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+    marginTop: 2,
+  },
+  detailVal: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  detailK: {
+    color: 'rgba(255,255,255,0.45)',
     fontSize: 12,
-    marginTop: 4,
   },
   scrollHint: {
     color: 'rgba(255,255,255,0.3)',

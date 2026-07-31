@@ -52,7 +52,7 @@ const TERMS_URL = 'https://aura.binnso.com/terminos'
 function MasMenu({ navigation }) {
   const items = [
     { icon: '🛡️', label: 'Salud financiera', screen: 'SaludFinanciera' },
-    { icon: '💳', label: 'Cobros y deudas', screen: 'Cobros' },
+    { icon: '💳', label: 'Cuentas con personas', screen: 'Cobros' },
     { icon: '🎯', label: 'Presupuesto', screen: 'Presupuesto' },
     { icon: '🔮', label: 'Simulador', screen: 'Simulador' },
     { icon: '🧩', label: 'Diferidos', screen: 'Diferidos' },
@@ -156,15 +156,15 @@ function MainTabs() {
         tabBarLabelStyle: { fontSize: 11 },
       })}
     >
-      <Tab.Screen name="Dashboard" component={DashboardScreen} />
-      <Tab.Screen name="Ingresos" component={IngresosScreen} />
+      <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ tabBarLabel: 'Mi dinero' }} />
+      <Tab.Screen name="Ingresos" component={IngresosScreen} options={{ tabBarLabel: 'Lo que ganas' }} />
       <Tab.Screen name="Aura" component={AsistenteScreen}
         options={{
           tabBarLabel: 'Aura AI',
           tabBarButton: (props) => <AuraTabButton {...props} />,
         }}
       />
-      <Tab.Screen name="Gastos" component={GastosScreen} />
+      <Tab.Screen name="Gastos" component={GastosScreen} options={{ tabBarLabel: 'Lo que gastas' }} />
       <Tab.Screen name="Más" component={MasNavigator} />
     </Tab.Navigator>
   )

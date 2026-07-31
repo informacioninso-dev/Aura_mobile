@@ -92,7 +92,7 @@ export default function IngresosScreen({ route, navigation }) {
 
   return (
     <GestureHandlerRootView style={s.root}>
-      <Text style={s.title}>Ingresos</Text>
+      <Text style={s.title}>Lo que ganas</Text>
 
       <View style={s.tabs}>
         {['fijos', 'puntuales'].map((t) => (

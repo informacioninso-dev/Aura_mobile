@@ -56,7 +56,7 @@ export default function CobrosScreen() {
 
   return (
     <GestureHandlerRootView style={s.root}>
-      <Text style={s.title}>Cobros y deudas</Text>
+      <Text style={s.title}>Cuentas con personas</Text>
 
       <View style={s.tabs}>
         {[['me_deben', 'Me deben'], ['debo', 'Debo']].map(([val, lbl]) => (
