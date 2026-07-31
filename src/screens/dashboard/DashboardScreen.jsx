@@ -578,26 +578,11 @@ export default function DashboardScreen({ navigation }) {
         </View>
       )}
 
-      <View style={s.heroCard}>
-        <View style={s.heroHeader}>
-          <Text style={s.heroLabel}>{heroLabel}</Text>
-          <Text style={[s.heroBadge, isFutureMonth && s.heroBadgeFuture]}>
-            {isFutureMonth ? 'Futuro' : 'Mes seleccionado'}
-          </Text>
-        </View>
-        <Text style={[s.heroValue, { color: heroValue >= 0 ? '#C487F6' : '#F87171' }]}>
-          {formatMoney(heroValue)}
-        </Text>
-        <Text style={s.heroSub}>{heroSub}</Text>
-      </View>
-
-      <View style={s.availableCard}>
-        <Text style={s.availableLabel}>Saldo disponible hoy</Text>
-        <Text style={[s.availableValue, { color: availableBalance >= 0 ? '#FFFFFF' : '#F87171' }]}>
-          {formatMoney(availableBalance)}
-        </Text>
-        <Text style={s.availableHint}>Basado en el cierre estimado de {availableBalanceLabel}.</Text>
-      </View>
+      {/* El dashboard NO encabeza con el saldo de cierre / disponible: un numero
+          grande basado en la proyeccion da una falsa tranquilidad. En su lugar
+          va el score de salud financiera (para quien lo tiene). El saldo del
+          cierre sigue disponible, pero contextualizado dentro de la proyeccion. */}
+      <SaludFinancieraCard navigation={navigation} />
 
       {reportLoading && !reportSummary ? (
         <View style={s.summaryLoadingCard}>
@@ -671,8 +656,6 @@ export default function DashboardScreen({ navigation }) {
           </Text>
         </View>
       )}
-
-      <SaludFinancieraCard navigation={navigation} />
 
       <View style={s.section}>
         <View style={s.sectionHeader}>
