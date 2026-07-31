@@ -15,6 +15,7 @@ import api from '../../api/client'
 import { formatMoney, formatDate } from '../../utils/formatters'
 import { montoEfectivoMes } from '../../utils/frecuencias'
 import ProjectionChart from '../../components/ui/ProjectionChart'
+import NotificationBell from '../../components/ui/NotificationBell'
 import { getApiErrorMessage } from '../../api/errors'
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
@@ -487,6 +488,7 @@ export default function DashboardScreen({ navigation }) {
           </Text>
           <Text style={s.subtitle}>Tu mes, claro y sin vueltas.</Text>
         </View>
+        <NotificationBell />
         <View style={s.planBadge}>
           <Text style={s.planText}>Plan {user?.plan?.name || 'Gratis'}</Text>
         </View>
