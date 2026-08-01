@@ -13,6 +13,8 @@ const PT = 16
 const PB = 28
 const MIN_WIDTH = 260
 const POINT_SPACING = 48
+// Meses visibles a la vez. Mismo tamaño de ventana que usa la web.
+const WINDOW_MONTHS = 12
 
 const ING_COLOR = colors.success
 const GASTO_COLOR = colors.danger
@@ -53,11 +55,14 @@ export default function ProjectionChart({
   loading: externalLoading = false,
   showHeader = true,
   advancedProjectionEnabled = false,
+  seriesFocus = 'all',
 }) {
   const [internalData, setInternalData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [viewportWidth, setViewportWidth] = useState(MIN_WIDTH)
   const [selectedIdx, setSelectedIdx] = useState(null)
+  // null = ventana automatica (centrada en hoy); un numero fija el inicio.
+  const [windowStartRaw, setWindowStartRaw] = useState(null)
   const usingExternalData = externalData !== undefined
 
   useEffect(() => {
@@ -101,7 +106,22 @@ export default function ProjectionChart({
     )
   }
 
-  const series = data.series
+  // Con horizontes largos (hasta 10 años) la serie completa no se puede leer de
+  // una: se muestra una ventana de 12 meses y se navega con las flechas, igual
+  // que la web. Arranca cerca de "hoy", no al inicio del historial.
+  const fullSeries = data.series
+  const hayVentana = fullSeries.length > WINDOW_MONTHS
+  const maxStart = Math.max(0, fullSeries.length - WINDOW_MONTHS)
+  const currentIdxFull = fullSeries.findIndex((point) => point.is_current)
+  const defaultStart = Math.max(
+    0,
+    Math.min(maxStart, (currentIdxFull >= 0 ? currentIdxFull : 0) - Math.floor(WINDOW_MONTHS / 3)),
+  )
+  const windowStart = Math.max(0, Math.min(maxStart, windowStartRaw ?? defaultStart))
+  const series = hayVentana
+    ? fullSeries.slice(windowStart, windowStart + WINDOW_MONTHS)
+    : fullSeries
+
   const currentIdx = series.findIndex((point) => point.is_current)
   const lastRealIdx = series.reduce((acc, point, index) => (point.is_real ? index : acc), -1)
 
@@ -132,7 +152,17 @@ export default function ProjectionChart({
     ? range(lastRealIdx, chartSeries.length - 1)
     : range(0, chartSeries.length - 1)
 
-  const allValues = chartSeries.flatMap((point) => [point.ingValue, point.gastoMes])
+  // El filtro deja ver una curva sola: con las dos juntas, la de menor magnitud
+  // queda aplastada contra el eje y no se aprecia su forma.
+  const verIngresos = seriesFocus !== 'expense'
+  const verGastos = seriesFocus !== 'income'
+
+  // La escala tambien se ajusta a lo visible; si no, al aislar los gastos el eje
+  // seguiria estirado por los ingresos y la curva quedaria igual de plana.
+  const allValues = chartSeries.flatMap((point) => [
+    ...(verIngresos ? [point.ingValue] : []),
+    ...(verGastos ? [point.gastoMes] : []),
+  ])
   const maxValue = Math.max(...allValues, 0)
   const minValue = Math.min(...allValues, 0)
   const padding = Math.max((maxValue - minValue) * 0.1, maxValue * 0.05, 50)
@@ -156,10 +186,10 @@ export default function ProjectionChart({
     }
   }
 
-  const ingReal = buildSeries(realIndices, 'ingValue')
-  const ingProj = buildSeries(projIndices, 'ingValue')
-  const gastoReal = buildSeries(realIndices, 'gastoMes')
-  const gastoProj = buildSeries(projIndices, 'gastoMes')
+  const ingReal = verIngresos ? buildSeries(realIndices, 'ingValue') : null
+  const ingProj = verIngresos ? buildSeries(projIndices, 'ingValue') : null
+  const gastoReal = verGastos ? buildSeries(realIndices, 'gastoMes') : null
+  const gastoProj = verGastos ? buildSeries(projIndices, 'gastoMes') : null
 
   const labelStep = Math.max(1, Math.ceil(chartSeries.length / 6))
   const labelIndices = chartSeries
@@ -296,16 +326,42 @@ export default function ProjectionChart({
       </ScrollView>
 
       <View style={s.legend}>
-        <View style={s.legendItem}>
-          <View style={[s.dot, { backgroundColor: ING_COLOR }]} />
-          <Text style={s.legendText}>Ingresos</Text>
-        </View>
-        <View style={s.legendItem}>
-          <View style={[s.dot, { backgroundColor: GASTO_COLOR }]} />
-          <Text style={s.legendText}>Gastos</Text>
-        </View>
+        {verIngresos ? (
+          <View style={s.legendItem}>
+            <View style={[s.dot, { backgroundColor: ING_COLOR }]} />
+            <Text style={s.legendText}>Ingresos</Text>
+          </View>
+        ) : null}
+        {verGastos ? (
+          <View style={s.legendItem}>
+            <View style={[s.dot, { backgroundColor: GASTO_COLOR }]} />
+            <Text style={s.legendText}>Gastos</Text>
+          </View>
+        ) : null}
         <Text style={s.legendHint}>Linea solida: real · punteada: proyectado</Text>
       </View>
+
+      {hayVentana ? (
+        <View style={s.rangeNav}>
+          <TouchableOpacity
+            style={[s.rangeBtn, windowStart <= 0 && s.rangeBtnOff]}
+            onPress={() => { setWindowStartRaw(Math.max(0, windowStart - WINDOW_MONTHS)); setSelectedIdx(null) }}
+            disabled={windowStart <= 0}
+          >
+            <Text style={s.rangeBtnText}>‹</Text>
+          </TouchableOpacity>
+          <Text style={s.rangeLabel}>
+            {series[0]?.label} — {series[series.length - 1]?.label}
+          </Text>
+          <TouchableOpacity
+            style={[s.rangeBtn, windowStart >= maxStart && s.rangeBtnOff]}
+            onPress={() => { setWindowStartRaw(Math.min(maxStart, windowStart + WINDOW_MONTHS)); setSelectedIdx(null) }}
+            disabled={windowStart >= maxStart}
+          >
+            <Text style={s.rangeBtnText}>›</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       {activePoint ? (
         <View style={s.detail}>
@@ -402,6 +458,30 @@ const s = StyleSheet.create({
     color: 'rgba(255,255,255,0.3)',
     fontSize: 11,
     marginLeft: 'auto',
+  },
+  rangeNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    gap: 8,
+  },
+  rangeBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  rangeBtnOff: { opacity: 0.3 },
+  rangeBtnText: { color: '#fff', fontSize: 17, lineHeight: 19 },
+  rangeLabel: {
+    color: 'rgba(255,255,255,0.55)',
+    fontSize: 12,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
   },
   detail: {
     marginTop: 10,

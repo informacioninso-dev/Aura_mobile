@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   TextInput,
+  Modal,
 } from 'react-native'
 
 import { useAuth } from '../../context/AuthContext'
@@ -16,6 +17,7 @@ import api from '../../api/client'
 import { formatMoney, formatDate } from '../../utils/formatters'
 import { montoEfectivoMes } from '../../utils/frecuencias'
 import ProjectionChart from '../../components/ui/ProjectionChart'
+import ProjectionControls, { getProjectionHelp } from '../../components/ui/ProjectionControls'
 import NotificationBell from '../../components/ui/NotificationBell'
 import SaludFinancieraCard from '../../components/ui/SaludFinancieraCard'
 import { getApiErrorMessage } from '../../api/errors'
@@ -121,7 +123,7 @@ function getFrequencyLabel(value) {
 }
 
 export default function DashboardScreen({ navigation }) {
-  const { user, logout } = useAuth()
+  const { user, logout, fetchMe } = useAuth()
   const currentMonth = useMemo(() => startOfMonth(new Date()), [])
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)
   const [ahorroInicial, setAhorroInicial] = useState('')
@@ -142,8 +144,63 @@ export default function DashboardScreen({ navigation }) {
   const freePastMonths = Math.max(1, projectionDisplayMonths - freeFutureMonths)
   const advancedProjectionEnabled = Boolean(user?.feature_access?.advanced_projection_enabled)
   const advancedProjectionMaxMonths = Math.max(1, Number(user?.feature_access?.advanced_projection_months || 120))
+  // Los meses son el punto de partida: con el plan Pro el usuario los ajusta con
+  // los selectores, en Free quedan fijos en lo que da su plan.
   const projectionFutureMonths = advancedProjectionEnabled ? Math.min(12, advancedProjectionMaxMonths) : freeFutureMonths
   const projectionPastMonths = advancedProjectionEnabled ? 6 : freePastMonths
+
+  const [pastMonths, setPastMonths] = useState(projectionPastMonths)
+  const [futureMonths, setFutureMonths] = useState(projectionFutureMonths)
+  const [seriesFocus, setSeriesFocus] = useState('all')
+  const [projectionMode, setProjectionMode] = useState('simple')
+  const [modeSaving, setModeSaving] = useState(false)
+  const [recalculando, setRecalculando] = useState(false)
+  const [chartExpandido, setChartExpandido] = useState(false)
+
+  // Sin el plan Pro la proyeccion siempre es simple, no importa lo guardado.
+  useEffect(() => {
+    setProjectionMode(advancedProjectionEnabled ? (user?.projection_mode || 'automatica') : 'simple')
+  }, [advancedProjectionEnabled, user?.projection_mode])
+
+  // El horizonte guardado puede exceder el tope del plan (ej. si bajo de Pro a
+  // Free): se recorta en vez de pedirle a la API algo que va a rechazar.
+  useEffect(() => {
+    if (futureMonths > advancedProjectionMaxMonths) setFutureMonths(advancedProjectionMaxMonths)
+  }, [advancedProjectionMaxMonths, futureMonths])
+
+  // El modo vive en el perfil del usuario, no en la pantalla: se guarda para que
+  // la web y la app muestren la misma proyeccion.
+  async function cambiarModo(nextMode) {
+    if (nextMode === projectionMode || modeSaving) return
+    const previo = projectionMode
+    setProjectionMode(nextMode)
+    setModeSaving(true)
+    try {
+      await api.patch('/usuarios/perfil/', { projection_mode: nextMode })
+      await fetchMe()
+    } catch (err) {
+      setProjectionMode(previo)
+      setError(getApiErrorMessage(err, 'No se pudo cambiar el modo de proyeccion.'))
+    } finally {
+      setModeSaving(false)
+    }
+  }
+
+  async function recalcularSaldos() {
+    if (recalculando) return
+    setRecalculando(true)
+    try {
+      await api.post('/finanzas/saldo-mes/recalcular/')
+      await Promise.all([
+        loadBase(selectedMonth, { silent: true }),
+        loadReport(selectedMonth, { silent: true }),
+      ])
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'No se pudo recalcular tu saldo.'))
+    } finally {
+      setRecalculando(false)
+    }
+  }
 
   const loadBase = useCallback(async (month, { silent = false } = {}) => {
     if (!silent) {
@@ -158,7 +215,7 @@ export default function DashboardScreen({ navigation }) {
       // valores del mes actual.
       const [dashboardResponse, projectionResponse] = await Promise.all([
         api.get(`/finanzas/dashboard/?anio=${month.getFullYear()}&mes=${month.getMonth() + 1}`),
-        api.get(`/finanzas/proyeccion-acumulada/?months=${projectionFutureMonths}&past_months=${projectionPastMonths}`),
+        api.get(`/finanzas/proyeccion-acumulada/?months=${futureMonths}&past_months=${pastMonths}`),
       ])
 
       setMovements({
@@ -176,7 +233,7 @@ export default function DashboardScreen({ navigation }) {
     } finally {
       setLoading(false)
     }
-  }, [projectionFutureMonths, projectionPastMonths])
+  }, [futureMonths, pastMonths])
 
   const loadReport = useCallback(async (month, { silent = false } = {}) => {
     const requestId = reportRequestRef.current + 1
@@ -797,13 +854,62 @@ export default function DashboardScreen({ navigation }) {
           </View>
         ) : null}
 
+        <ProjectionControls
+          mode={projectionMode}
+          onModeChange={cambiarModo}
+          modeSaving={modeSaving}
+          modeLocked={!advancedProjectionEnabled}
+          pastMonths={pastMonths}
+          onPastMonthsChange={setPastMonths}
+          futureMonths={futureMonths}
+          onFutureMonthsChange={setFutureMonths}
+          maxFutureMonths={advancedProjectionMaxMonths}
+          seriesFocus={seriesFocus}
+          onSeriesFocusChange={setSeriesFocus}
+          onRecalcular={recalcularSaldos}
+          recalculando={recalculando}
+          onExpandir={() => setChartExpandido(true)}
+          helpText={getProjectionHelp(
+            projectionMode,
+            Number(projection?.variable_history_months_used ?? 0),
+            Number(projection?.variable_history_observations ?? 0),
+          )}
+        />
+
         <ProjectionChart
           data={projection}
           loading={loading}
           showHeader={false}
           advancedProjectionEnabled={advancedProjectionEnabled}
+          seriesFocus={seriesFocus}
         />
       </View>
+
+      {/* La grafica en el ancho del telefono queda apretada; en horizontal se
+          lee mucho mejor sin tener que hacer scroll lateral. */}
+      <Modal
+        visible={chartExpandido}
+        animationType="slide"
+        onRequestClose={() => setChartExpandido(false)}
+        supportedOrientations={['portrait', 'landscape']}
+      >
+        <View style={s.modalRoot}>
+          <View style={s.modalHeader}>
+            <Text style={s.modalTitle}>Proyección de saldo</Text>
+            <TouchableOpacity style={s.modalClose} onPress={() => setChartExpandido(false)}>
+              <Text style={s.modalCloseText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={s.modalHint}>Gira el teléfono para verla más ancha.</Text>
+          <ProjectionChart
+            data={projection}
+            loading={loading}
+            showHeader={false}
+            advancedProjectionEnabled={advancedProjectionEnabled}
+            seriesFocus={seriesFocus}
+          />
+        </View>
+      </Modal>
 
       <TouchableOpacity style={s.logoutBtn} onPress={logout}>
         <Text style={s.logoutText}>Cerrar sesión</Text>
@@ -1031,6 +1137,12 @@ const s = StyleSheet.create({
   },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   sectionTitle: { color: colors.text, fontWeight: '700', fontSize: 15 },
+  modalRoot: { flex: 1, backgroundColor: colors.bg, paddingTop: 48, paddingHorizontal: 12 },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 },
+  modalTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  modalClose: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' },
+  modalCloseText: { color: colors.text, fontSize: 15 },
+  modalHint: { color: colors.textMuted, fontSize: 11, paddingHorizontal: 4, marginTop: 2, marginBottom: 10 },
   sectionHint: { color: colors.textFaint, fontSize: 11 },
   sectionTotal: { fontSize: 14, fontWeight: '800' },
   projectionCopy: { color: 'rgba(255,255,255,0.45)', fontSize: 12, marginBottom: 12 },
