@@ -33,17 +33,10 @@ const MasStack = createNativeStackNavigator()
 // declarado en app.json, aura://reset-password?uid=..&token=.. abre la pantalla
 // con los datos ya cargados; si el correo se abre en el navegador en vez de la
 // app, la pantalla permite pegarlos a mano.
-const linking = {
-  prefixes: ['aura://'],
-  config: {
-    screens: {
-      Login: 'login',
-      Registro: 'registro',
-      ForgotPassword: 'forgot-password',
-      ResetPassword: 'reset-password',
-    },
-  },
-}
+// Sin deep linking a proposito: el arbol de navegacion cambia segun haya sesion
+// o no, y un config de linking que nombre pantallas ausentes en uno de los dos
+// estados hace fallar el arranque. ResetPasswordScreen no lo necesita, porque
+// tambien permite pegar el uid y el token del correo a mano.
 
 // Los textos legales viven solo en la web: duplicarlos en la app garantiza que
 // tarde o temprano queden desincronizados, y en textos legales eso importa.
@@ -240,19 +233,18 @@ export default function AppNavigator() {
   }
 
   return (
-    <NavigationContainer linking={linking}>
+    <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {user
-          ? <Stack.Screen name="Main" component={MainTabs} />
-          : (
-            <>
-              <Stack.Screen name="Login" component={LoginScreen} />
-              <Stack.Screen name="Registro" component={RegistroScreen} />
-              <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-              <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-            </>
-          )
-        }
+        {user ? (
+          <Stack.Screen name="Main" component={MainTabs} />
+        ) : (
+          <Stack.Group>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Registro" component={RegistroScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+            <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+          </Stack.Group>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   )
