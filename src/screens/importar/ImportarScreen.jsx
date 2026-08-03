@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
+import { View, Text, FlatList, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
 import * as DocumentPicker from 'expo-document-picker'
 import * as Sharing from 'expo-sharing'
 import { File, Paths } from 'expo-file-system'
@@ -9,6 +9,10 @@ import { formatMoney, formatDate } from '../../utils/formatters'
 import { useTopInset } from '../../hooks/useTopInset'
 import ScreenHeader from '../../components/ui/ScreenHeader'
 import { colors } from '../../theme/theme'
+import { useAuth } from '../../context/AuthContext'
+import * as LegacyFS from 'expo-file-system/legacy'
+import { getAccess } from '../../api/authStorage'
+import { API_BASE } from '../../api/client'
 
 const TEMPLATE_CSV = `fecha,descripcion,monto,tipo,categoria
 2025-12-01,Sueldo diciembre,1500000,ingreso,
@@ -39,6 +43,11 @@ function FilaItem({ fila, selected, onToggle }) {
 }
 
 export default function ImportarScreen() {
+  const { user } = useAuth()
+  const esAsesor = user?.plan?.assignment_tipo === 'asesor'
+  const [respaldoCargando, setRespaldoCargando] = useState(false)
+  const [respaldoResultado, setRespaldoResultado] = useState(null)
+  const [respaldoError, setRespaldoError] = useState('')
   const [fase, setFase] = useState('upload')
   const [archivo, setArchivo] = useState(null)
   const [cargando, setCargando] = useState(false)
@@ -135,6 +144,58 @@ export default function ImportarScreen() {
     setSeleccion([])
     setResultado(null)
     setError('')
+  }
+
+  // Respaldo completo (solo asesor): exportar/importar la cuenta entera en XLSX.
+  const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+  async function exportarCuenta() {
+    setRespaldoError('')
+    setRespaldoCargando(true)
+    try {
+      // El binario con header de auth se baja con la API legacy (downloadAsync),
+      // que maneja bien archivos y cabeceras; luego se comparte.
+      const token = await getAccess()
+      const destino = `${LegacyFS.cacheDirectory}respaldo_aura_${new Date().toISOString().slice(0, 10)}.xlsx`
+      const { uri, status } = await LegacyFS.downloadAsync(`${API_BASE}finanzas/respaldo/exportar/`, destino, {
+        headers: { Authorization: `Bearer ${token}`, 'X-Client': 'mobile' },
+      })
+      if (status !== 200) throw new Error(`status ${status}`)
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { mimeType: XLSX_MIME, dialogTitle: 'Respaldo de tu cuenta Aura' })
+      } else {
+        Alert.alert('Respaldo guardado', uri)
+      }
+    } catch {
+      setRespaldoError('No se pudo exportar la cuenta.')
+    } finally {
+      setRespaldoCargando(false)
+    }
+  }
+
+  async function importarRespaldo() {
+    const res = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true })
+    if (res.canceled) return
+    const asset = res.assets[0]
+    if (!asset.name.toLowerCase().endsWith('.xlsx')) {
+      setRespaldoError('El respaldo debe ser un archivo .xlsx exportado desde Aura.')
+      return
+    }
+    setRespaldoError('')
+    setRespaldoResultado(null)
+    setRespaldoCargando(true)
+    try {
+      const formData = new FormData()
+      formData.append('archivo', { uri: asset.uri, name: asset.name, type: XLSX_MIME })
+      const { data } = await api.post('/finanzas/respaldo/importar/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      setRespaldoResultado(data)
+    } catch (err) {
+      setRespaldoError(getApiErrorMessage(err, 'No se pudo importar el respaldo.'))
+    } finally {
+      setRespaldoCargando(false)
+    }
   }
 
   const topPad = useTopInset()
@@ -240,7 +301,7 @@ export default function ImportarScreen() {
   }
 
   return (
-    <View style={[s.root, { paddingTop: topPad }]}>
+    <ScrollView style={s.root} contentContainerStyle={{ paddingTop: topPad, paddingBottom: 40 }}>
       <ScreenHeader title="Importar movimientos" subtitle="Sube tu estado de cuenta o tu planilla de movimientos en Excel o CSV." />
 
       <TouchableOpacity style={s.card} onPress={descargarPlantilla}>
@@ -272,7 +333,44 @@ export default function ImportarScreen() {
           ? <ActivityIndicator color={colors.text} />
           : <Text style={s.primaryBtnText}>Subir y previsualizar</Text>}
       </TouchableOpacity>
-    </View>
+
+      {esAsesor && (
+        <View style={s.asesorBox}>
+          <Text style={s.asesorTag}>ASESOR · RESPALDO DE CUENTA COMPLETA</Text>
+          <Text style={s.asesorHint}>
+            Exporta TODO (ingresos, gastos fijos/variables y sus consumos, diferidos, cuentas con personas y categorias) y
+            reimportalo en otra cuenta.
+          </Text>
+
+          <TouchableOpacity style={[s.card, respaldoCargando && s.btnDisabled]} onPress={exportarCuenta} disabled={respaldoCargando}>
+            <Text style={s.cardIcon}>📤</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={s.cardTitle}>Exportar cuenta (Excel)</Text>
+              <Text style={s.cardHint}>{respaldoCargando ? 'Procesando...' : 'Descarga o comparte tu respaldo .xlsx'}</Text>
+            </View>
+            <Text style={s.cardArrow}>›</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[s.card, respaldoCargando && s.btnDisabled]} onPress={importarRespaldo} disabled={respaldoCargando}>
+            <Text style={s.cardIcon}>📥</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={s.cardTitle}>Importar respaldo (.xlsx)</Text>
+              <Text style={s.cardHint}>Restaura un respaldo exportado desde Aura</Text>
+            </View>
+            <Text style={s.cardArrow}>›</Text>
+          </TouchableOpacity>
+
+          {!!respaldoError && <Text style={s.errorMsg}>{respaldoError}</Text>}
+          {respaldoResultado && (
+            <Text style={s.asesorOk}>
+              ✅ Importado: {respaldoResultado.conteo?.ingresos ?? 0} ingresos · {respaldoResultado.conteo?.gastos ?? 0} gastos ·{' '}
+              {respaldoResultado.conteo?.consumos ?? 0} consumos · {respaldoResultado.conteo?.diferidos ?? 0} diferidos ·{' '}
+              {respaldoResultado.conteo?.cuentas ?? 0} cuentas · {respaldoResultado.conteo?.categorias ?? 0} categorias
+            </Text>
+          )}
+        </View>
+      )}
+    </ScrollView>
   )
 }
 
@@ -302,6 +400,13 @@ const s = StyleSheet.create({
   secondaryBtnText: { color: 'rgba(255,255,255,0.7)', fontWeight: '600', fontSize: 15 },
   btnDisabled: { opacity: 0.4 },
   errorMsg: { color: colors.danger, fontSize: 13, marginBottom: 8 },
+  asesorBox: {
+    marginTop: 20, paddingTop: 16,
+    borderTopWidth: 1, borderTopColor: 'rgba(196,135,246,0.25)',
+  },
+  asesorTag: { color: colors.primary, fontSize: 11, fontWeight: '800', letterSpacing: 0.6, marginBottom: 6 },
+  asesorHint: { color: colors.textFaint, fontSize: 12, lineHeight: 17, marginBottom: 12 },
+  asesorOk: { color: colors.success, fontSize: 12, lineHeight: 17, marginTop: 4 },
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
   chip: {
     backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 8,
