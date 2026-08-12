@@ -85,6 +85,27 @@ function overlapsMonth(item, monthDate) {
   return Boolean(start && start <= monthEnd && (!end || end >= monthStart))
 }
 
+const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+
+// "2028-08-31" -> "ago 2028"
+function mesAnioCorto(value) {
+  if (!value) return ''
+  const [y, m] = String(value).split('-').map(Number)
+  return `${MESES_CORTOS[m - 1]} ${y}`
+}
+
+// Avance de un diferido al mes de referencia: en que cuota va (X de N) y % pagado.
+function cuotaProgreso(item, monthDate) {
+  const total = Number(item?.num_cuotas) || 0
+  if (!total || !item?.fecha_inicio) return null
+  const inicio = startOfMonth(parseLocalDate(item.fecha_inicio))
+  const ref = startOfMonth(monthDate)
+  const transcurridas =
+    (ref.getFullYear() - inicio.getFullYear()) * 12 + (ref.getMonth() - inicio.getMonth()) + 1
+  const actual = Math.max(0, Math.min(transcurridas, total))
+  return { actual, total, pct: Math.round((actual / total) * 100) }
+}
+
 function occursInMonth(item, monthDate, dateField = 'fecha') {
   const targetDate = parseLocalDate(item?.[dateField])
   if (!targetDate) return false
@@ -433,12 +454,19 @@ export default function DashboardScreen({ navigation }) {
         meta: `${item.categoria || 'Sin categoría'} · ${getFrequencyLabel(item.frecuencia)}`,
         amount: montoEfectivoMes(montoDelMes(item), item.frecuencia, item.fecha_inicio, selectedMonth.getFullYear(), selectedMonth.getMonth() + 1),
       })),
-      ...installmentsThisMonth.map((item) => ({
-        id: `expense-installment-${item.id}`,
-        label: item.descripcion,
-        meta: `${item.categoria || 'Sin categoría'} · cuota mensual`,
-        amount: cuotaDelMes(item),
-      })),
+      ...installmentsThisMonth.map((item) => {
+        const prog = cuotaProgreso(item, selectedMonth)
+        return {
+          id: `expense-installment-${item.id}`,
+          label: item.descripcion,
+          meta: prog
+            ? `${item.categoria || 'Sin categoría'} · ${prog.actual}/${prog.total}`
+              + (item.fecha_fin ? ` · termina ${mesAnioCorto(item.fecha_fin)}` : '')
+            : `${item.categoria || 'Sin categoría'} · cuota mensual`,
+          amount: cuotaDelMes(item),
+          progress: prog ? prog.pct : null,
+        }
+      }),
       ...punctualExpensesThisMonth.map((item) => ({
         id: `expense-punctual-${item.id}`,
         label: item.descripcion,
@@ -949,6 +977,11 @@ function DetailCard({ title, total, items, emptyLabel, accent, showAll }) {
               <View style={{ flex: 1 }}>
                 <Text style={s.detailLabel}>{item.label}</Text>
                 <Text style={s.detailMeta}>{item.meta}</Text>
+                {item.progress != null && (
+                  <View style={s.progressTrack}>
+                    <View style={[s.progressFill, { width: `${item.progress}%` }]} />
+                  </View>
+                )}
               </View>
               <Text style={[s.detailAmount, { color: accent }]}>{formatMoney(item.amount)}</Text>
             </View>
@@ -1160,6 +1193,8 @@ const s = StyleSheet.create({
   detailRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 10 },
   detailLabel: { color: colors.text, fontSize: 13, fontWeight: '600' },
   detailMeta: { color: 'rgba(255,255,255,0.38)', fontSize: 11, marginTop: 2 },
+  progressTrack: { marginTop: 6, height: 5, maxWidth: 190, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.10)', overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 999, backgroundColor: colors.primary },
   detailAmount: { fontSize: 13, fontWeight: '700' },
   moreText: { color: colors.textFaint, fontSize: 12, marginTop: 2 },
   emptyListText: { color: colors.textMuted, fontSize: 13, lineHeight: 18 },
