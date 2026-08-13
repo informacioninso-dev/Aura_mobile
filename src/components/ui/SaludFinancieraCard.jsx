@@ -31,7 +31,7 @@ function MiniRing({ score, color, size = 64 }) {
  * con el score + banda + "Ver detalle" que abre la pantalla completa. Solo para
  * planes con la feature (pro); si no, no se muestra.
  */
-export default function SaludFinancieraCard({ navigation }) {
+export default function SaludFinancieraCard({ navigation, variant = 'card' }) {
   const { user } = useAuth()
   const habilitado = Boolean(user?.feature_access?.health_score_enabled)
   const [data, setData] = useState(null)
@@ -54,6 +54,20 @@ export default function SaludFinancieraCard({ navigation }) {
   if (!habilitado || !data?.disponible) return null
 
   const color = data?.banda?.color || colors.primary
+
+  if (variant === 'chip') {
+    return (
+      <TouchableOpacity
+        style={s.chip}
+        activeOpacity={0.7}
+        onPress={() => navigation.navigate('Más', { screen: 'SaludFinanciera' })}
+      >
+        <View style={[s.chipDot, { backgroundColor: color }]} />
+        <Text style={s.chipScore}>{Math.round(Number(data.score) || 0)}</Text>
+        <Text style={[s.chipBanda, { color }]}>{data?.banda?.label || ''}</Text>
+      </TouchableOpacity>
+    )
+  }
 
   return (
     <TouchableOpacity
@@ -89,4 +103,12 @@ const s = StyleSheet.create({
   banda: { fontSize: 17, fontWeight: '800', marginTop: 1 },
   sub: { color: 'rgba(255,255,255,0.45)', fontSize: 11.5, marginTop: 2, lineHeight: 15 },
   verMas: { color: colors.primary, fontSize: 12, fontWeight: '700', textAlign: 'right' },
+  chip: {
+    alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8,
+    paddingVertical: 4, paddingHorizontal: 10, borderRadius: 999,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.10)', backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  chipDot: { width: 8, height: 8, borderRadius: 4 },
+  chipScore: { color: colors.text, fontSize: 12, fontWeight: '800' },
+  chipBanda: { fontSize: 11, fontWeight: '700' },
 })

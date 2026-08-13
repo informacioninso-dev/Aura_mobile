@@ -582,6 +582,7 @@ export default function DashboardScreen({ navigation }) {
             {user?.username ? `, ${user.username}` : ''}
           </Text>
           <Text style={s.subtitle}>Tu mes, claro y sin vueltas.</Text>
+          <SaludFinancieraCard variant="chip" navigation={navigation} />
         </View>
         <NotificationBell />
         <View style={s.planBadge}>
@@ -671,7 +672,6 @@ export default function DashboardScreen({ navigation }) {
           grande basado en la proyeccion da una falsa tranquilidad. En su lugar
           va el score de salud financiera (para quien lo tiene). El saldo del
           cierre sigue disponible, pero contextualizado dentro de la proyeccion. */}
-      <SaludFinancieraCard navigation={navigation} />
 
       {reportLoading && !reportSummary ? (
         <View style={s.summaryLoadingCard}>
