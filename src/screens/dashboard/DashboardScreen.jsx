@@ -153,6 +153,7 @@ export default function DashboardScreen({ navigation }) {
   const [report, setReport] = useState(null)
   const [reportMonthKey, setReportMonthKey] = useState('')
   const [projection, setProjection] = useState(null)
+  const [showNegDetail, setShowNegDetail] = useState(false)
   const [loading, setLoading] = useState(true)
   const [reportLoading, setReportLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -551,6 +552,10 @@ export default function DashboardScreen({ navigation }) {
   // Ultimo punto proyectado: su saldo de cierre es "con lo que terminarias".
   const projLast = projection?.series?.length ? projection.series[projection.series.length - 1] : null
   const projCierre = Number(projLast?.closing_balance ?? 0)
+  // Resumen del horizonte (ya acotado por el plan): meses en positivo vs en rojo.
+  const proyectados = (projection?.series || []).filter((p) => !p.is_real)
+  const mesesEnRojo = proyectados.filter((p) => Number(p.closing_balance ?? 0) < 0)
+  const mesesEnPositivo = proyectados.length - mesesEnRojo.length
   const esModoSimple = projection?.projection_mode === 'simple'
   const topPad = useTopInset()
 
@@ -854,9 +859,45 @@ export default function DashboardScreen({ navigation }) {
         {projection ? (
           <View style={s.projTiles}>
             <View style={[s.projTile, s.projTileWide]}>
-              <Text style={s.projTileLabel}>Si sigues así, terminarías con</Text>
-              <Text style={[s.projTileVal, { color: projCierre >= 0 ? colors.primary : colors.danger }]}>{formatMoney(projCierre)}</Text>
+              <View style={s.projOutlookRow}>
+                <Text style={[s.projTileLabel, { flex: 1 }]}>Si sigues así, terminarías con</Text>
+                {proyectados.length > 0 && (
+                  <Text style={[s.projOutlookPill, { color: colors.success }]}>{mesesEnPositivo} en positivo</Text>
+                )}
+              </View>
+              <View style={s.projOutlookRow}>
+                <Text style={[s.projTileVal, { flex: 1, color: projCierre >= 0 ? colors.primary : colors.danger }]}>{formatMoney(projCierre)}</Text>
+                {proyectados.length > 0 && (
+                  <Text style={[s.projOutlookPill, { color: mesesEnRojo.length ? colors.danger : 'rgba(255,255,255,0.38)' }]}>{mesesEnRojo.length} en rojo</Text>
+                )}
+              </View>
               <Text style={s.projTileHint}>Saldo estimado al cierre de {projLast?.label || 'el horizonte'}</Text>
+              {mesesEnRojo.length > 0 && (
+                <>
+                  <TouchableOpacity onPress={() => setShowNegDetail((v) => !v)} activeOpacity={0.7}>
+                    <Text style={s.projOutlookToggle}>
+                      {showNegDetail
+                        ? 'Ocultar el detalle'
+                        : `Ver ${mesesEnRojo.length === 1 ? 'el mes en rojo' : `los ${mesesEnRojo.length} meses en rojo`}`}
+                    </Text>
+                  </TouchableOpacity>
+                  {showNegDetail && (
+                    <View style={s.projOutlookList}>
+                      {mesesEnRojo.slice(0, 4).map((m) => (
+                        <View key={m.month} style={s.projOutlookItem}>
+                          <Text style={s.projOutlookItemLabel}>{m.label}</Text>
+                          <Text style={s.projOutlookItemVal}>{formatMoney(Number(m.closing_balance ?? 0))}</Text>
+                        </View>
+                      ))}
+                      {mesesEnRojo.length > 4 && (
+                        <Text style={s.projOutlookMore}>
+                          y {mesesEnRojo.length - 4} {mesesEnRojo.length - 4 === 1 ? 'mes más' : 'meses más'} en rojo
+                        </Text>
+                      )}
+                    </View>
+                  )}
+                </>
+              )}
             </View>
             <View style={s.projTile}>
               <Text style={s.projTileLabel}>Hoy partes con</Text>
@@ -1190,6 +1231,18 @@ const s = StyleSheet.create({
   projTileLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.3 },
   projTileVal: { color: colors.text, fontSize: 18, fontWeight: '800', marginTop: 3 },
   projTileHint: { color: colors.textMuted, fontSize: 11, marginTop: 3, lineHeight: 15 },
+  projOutlookRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  projOutlookPill: { fontSize: 12, fontWeight: '800' },
+  projOutlookToggle: { color: colors.danger, fontSize: 12, fontWeight: '700', textDecorationLine: 'underline', marginTop: 8 },
+  projOutlookList: { marginTop: 8, gap: 4 },
+  projOutlookItem: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 8,
+    paddingVertical: 4, paddingHorizontal: 9,
+  },
+  projOutlookItemLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 12 },
+  projOutlookItemVal: { color: colors.danger, fontSize: 12, fontWeight: '800' },
+  projOutlookMore: { color: 'rgba(255,255,255,0.4)', fontSize: 12, textAlign: 'center', marginTop: 2 },
   detailRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 10 },
   detailLabel: { color: colors.text, fontSize: 13, fontWeight: '600' },
   detailMeta: { color: 'rgba(255,255,255,0.38)', fontSize: 11, marginTop: 2 },
