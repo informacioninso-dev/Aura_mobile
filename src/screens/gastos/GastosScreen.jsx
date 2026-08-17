@@ -12,6 +12,8 @@ import { colors } from '../../theme/theme'
 
 const FREQ = { diario: 'Diario', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual', bimestral: 'Bimestral', trimestral: 'Trimestral', semestral: 'Semestral', anual: 'Anual' }
 
+const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+
 const FIELDS_FIJO = [
   { key: 'descripcion', label: 'Descripción', type: 'text', placeholder: 'Ej: Arriendo, Netflix' },
   { key: 'monto', label: 'Monto', type: 'number', placeholder: '0.00' },
@@ -61,10 +63,20 @@ export default function GastosScreen({ route, navigation }) {
   const hoy = new Date()
   const anioMes = { anio: hoy.getFullYear(), mes: hoy.getMonth() + 1 }
 
+  // Navegador de mes para gastos fijos: muestra los activos en ese mes
+  // (segun fecha_inicio/fecha_fin), igual que en la web.
+  const [selectedMonth, setSelectedMonth] = useState(() => new Date(hoy.getFullYear(), hoy.getMonth(), 1))
+  const fijosAnio = selectedMonth.getFullYear()
+  const fijosMes = selectedMonth.getMonth() + 1
+  const nextMonthDisabled = new Date(fijosAnio, fijosMes, 1) > new Date(hoy.getFullYear(), hoy.getMonth(), 1)
+  function shiftMonth(delta) {
+    setSelectedMonth((cur) => new Date(cur.getFullYear(), cur.getMonth() + delta, 1))
+  }
+
   const cargar = useCallback(() => {
     setLoading(true)
     Promise.all([
-      api.get('/finanzas/gastos-corrientes/?tipo_monto=fijo'),
+      api.get(`/finanzas/gastos-corrientes/?tipo_monto=fijo&anio=${fijosAnio}&mes=${fijosMes}`),
       api.get(`/finanzas/gastos-corrientes/resumen_variables/?anio=${hoy.getFullYear()}&mes=${hoy.getMonth() + 1}`),
       api.get('/finanzas/gastos-no-corrientes/'),
     ])
@@ -75,7 +87,7 @@ export default function GastosScreen({ route, navigation }) {
       })
       .finally(() => setLoading(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [fijosAnio, fijosMes])
 
   useEffect(() => { cargar() }, [cargar])
 
@@ -168,6 +180,22 @@ export default function GastosScreen({ route, navigation }) {
 
       <Text style={s.tabHint}>{TABS.find((t) => t.id === tab)?.hint}</Text>
 
+      {tab === 'fijos' && (
+        <View style={s.monthNav}>
+          <TouchableOpacity style={s.monthNavBtn} onPress={() => shiftMonth(-1)}>
+            <Text style={s.monthNavArrow}>‹</Text>
+          </TouchableOpacity>
+          <Text style={s.monthNavLabel}>{MESES[selectedMonth.getMonth()]} {selectedMonth.getFullYear()}</Text>
+          <TouchableOpacity
+            style={s.monthNavBtn}
+            onPress={() => shiftMonth(1)}
+            disabled={nextMonthDisabled}
+          >
+            <Text style={[s.monthNavArrow, nextMonthDisabled && s.monthNavArrowOff]}>›</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {loading
         ? <View style={s.center}><ActivityIndicator color={colors.primary} /></View>
         : <FlatList
@@ -197,7 +225,12 @@ export default function GastosScreen({ route, navigation }) {
             <SwipeableRow onEdit={() => setModal({ visible: true, item })} onDelete={() => eliminar(item)}>
               <View style={s.card}>
                 <View style={{ flex: 1 }}>
-                  <Text style={s.desc}>{item.descripcion}</Text>
+                  <View style={s.descRow}>
+                    <Text style={s.desc}>{item.descripcion}</Text>
+                    {item.version_info && (
+                      <Text style={s.versionChip}>v{item.version_info.numero}</Text>
+                    )}
+                  </View>
                   <Text style={s.meta}>
                     {tab === 'puntuales' ? item.fecha : (FREQ[item.frecuencia] || item.frecuencia)}
                     {item.categoria ? ` · ${item.categoria}` : ''}
@@ -247,9 +280,16 @@ const s = StyleSheet.create({
   tabText: { color: colors.textMuted, fontWeight: '600', fontSize: 13 },
   tabTextActive: { color: colors.text },
   tabHint: { color: colors.textFaint, fontSize: 12, textAlign: 'center', marginBottom: 6 },
+  monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 8 },
+  monthNavBtn: { width: 34, height: 34, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' },
+  monthNavArrow: { color: colors.text, fontSize: 20, lineHeight: 22, fontWeight: '700' },
+  monthNavArrowOff: { color: 'rgba(255,255,255,0.2)' },
+  monthNavLabel: { color: colors.text, fontSize: 15, fontWeight: '700', minWidth: 150, textAlign: 'center' },
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.borderExpense },
   cardRight: { alignItems: 'flex-end' },
+  descRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   desc: { color: colors.text, fontSize: 15, fontWeight: '600' },
+  versionChip: { color: colors.primary, fontSize: 11, fontWeight: '800', backgroundColor: 'rgba(196,135,246,0.14)', borderRadius: 999, paddingHorizontal: 7, paddingVertical: 1, overflow: 'hidden' },
   meta: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
   monto: { color: colors.danger, fontWeight: '700', fontSize: 16 },
   pendiente: { color: '#FBBF24', fontWeight: '700', fontSize: 14 },
