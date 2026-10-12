@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../api/client'
-import { getApiErrorMessage } from '../../api/errors'
-import { formatMoney } from '../../utils/formatters'
 import { useTopInset } from '../../hooks/useTopInset'
 import ScreenHeader from '../../components/ui/ScreenHeader'
 import { colors } from '../../theme/theme'
+
+// La app no vende planes: las tiendas exigen su propio sistema de cobro para
+// contenido digital. Aquí solo se muestra qué incluye cada plan.
 
 function featureLabel(feature) {
   if (feature.value_type === 'bool') return feature.value_bool ? feature.name : null
@@ -14,12 +15,15 @@ function featureLabel(feature) {
   return feature.value_text || feature.name
 }
 
-export default function PlanesScreen({ navigation }) {
+function formatDate(value) {
+  if (!value) return ''
+  return new Date(value).toLocaleDateString('es', { day: '2-digit', month: 'long', year: 'numeric' })
+}
+
+export default function PlanesScreen() {
   const { user } = useAuth()
   const [planes, setPlanes] = useState([])
   const [loading, setLoading] = useState(true)
-  const [pagando, setPagando] = useState(null)
-  const [error, setError] = useState('')
 
   const cargar = useCallback(() => {
     setLoading(true)
@@ -30,25 +34,8 @@ export default function PlanesScreen({ navigation }) {
 
   useEffect(() => { cargar() }, [cargar])
 
-  async function contratar(plan) {
-    if (plan.is_default || plan.precio_mensual <= 0) return
-    setPagando(plan.id)
-    setError('')
-    try {
-      const { data } = await api.post('/usuarios/pago/iniciar/', { plan_id: plan.id })
-      navigation.navigate('Pago', {
-        payUrl: data.pay_url,
-        clientTransactionId: data.client_transaction_id,
-        planName: plan.name,
-      })
-    } catch (err) {
-      setError(getApiErrorMessage(err, 'No se pudo iniciar el pago.'))
-    } finally {
-      setPagando(null)
-    }
-  }
-
   const planActual = user?.plan?.slug
+  const vence = user?.plan?.assignment_ends_at
   const topPad = useTopInset()
 
   if (loading) {
@@ -61,13 +48,10 @@ export default function PlanesScreen({ navigation }) {
 
   return (
     <ScrollView style={s.root} contentContainerStyle={{ padding: 16, paddingTop: topPad, paddingBottom: 40 }}>
-      <ScreenHeader title="Planes" subtitle="Elige el plan que mejor se adapte a tus necesidades." />
-
-      {!!error && <Text style={s.errorMsg}>{error}</Text>}
+      <ScreenHeader title="Mi plan" subtitle="Lo que incluye cada plan de Aura." />
 
       {planes.map((plan) => {
         const esActual = planActual === plan.slug
-        const esGratis = Number(plan.precio_mensual) <= 0
         const features = plan.features.map(featureLabel).filter(Boolean)
 
         return (
@@ -80,19 +64,7 @@ export default function PlanesScreen({ navigation }) {
 
             <Text style={s.planName}>{plan.name}</Text>
             {!!plan.description && <Text style={s.planDesc}>{plan.description}</Text>}
-
-            <View style={s.priceRow}>
-              {esGratis
-                ? <Text style={s.priceFree}>Gratis</Text>
-                : (
-                  <>
-                    <Text style={s.priceValue}>{formatMoney(Number(plan.precio_mensual))}</Text>
-                    <Text style={s.pricePeriod}>
-                      / {plan.duracion_meses === 1 ? 'mes' : `${plan.duracion_meses} meses`}
-                    </Text>
-                  </>
-                )}
-            </View>
+            {esActual && !!vence && <Text style={s.planDesc}>Activo hasta el {formatDate(vence)}</Text>}
 
             {features.length > 0 && (
               <View style={s.featuresList}>
@@ -104,26 +76,6 @@ export default function PlanesScreen({ navigation }) {
                 ))}
               </View>
             )}
-
-            {esActual ? (
-              <View style={[s.btn, s.btnDisabled]}>
-                <Text style={s.btnTextDisabled}>Plan activo</Text>
-              </View>
-            ) : esGratis ? (
-              <View style={[s.btn, s.btnDisabled]}>
-                <Text style={s.btnTextDisabled}>Plan base</Text>
-              </View>
-            ) : (
-              <TouchableOpacity
-                style={[s.btn, s.btnPrimary, pagando === plan.id && s.btnDisabled]}
-                onPress={() => contratar(plan)}
-                disabled={pagando === plan.id}
-              >
-                {pagando === plan.id
-                  ? <ActivityIndicator color={colors.text} />
-                  : <Text style={s.btnText}>Contratar</Text>}
-              </TouchableOpacity>
-            )}
           </View>
         )
       })}
@@ -134,7 +86,6 @@ export default function PlanesScreen({ navigation }) {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   center: { justifyContent: 'center', alignItems: 'center' },
-  errorMsg: { color: colors.danger, fontSize: 13, marginBottom: 12, textAlign: 'center' },
   card: {
     backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 18, padding: 20,
     borderWidth: 1.5, borderColor: colors.border, marginBottom: 16, position: 'relative',
@@ -147,17 +98,8 @@ const s = StyleSheet.create({
   badgeText: { color: colors.primary, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
   planName: { color: colors.text, fontSize: 18, fontWeight: '700', marginBottom: 4, paddingRight: 90 },
   planDesc: { color: 'rgba(255,255,255,0.5)', fontSize: 13, marginBottom: 12 },
-  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginBottom: 14 },
-  priceFree: { color: colors.text, fontSize: 26, fontWeight: '800' },
-  priceValue: { color: colors.text, fontSize: 26, fontWeight: '800' },
-  pricePeriod: { color: 'rgba(255,255,255,0.55)', fontSize: 13 },
-  featuresList: { gap: 8, marginBottom: 16 },
+  featuresList: { gap: 8 },
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   featureCheck: { color: colors.primary, fontSize: 13, fontWeight: '700' },
   featureText: { color: 'rgba(255,255,255,0.75)', fontSize: 13, flex: 1 },
-  btn: { borderRadius: 12, paddingVertical: 13, alignItems: 'center', justifyContent: 'center' },
-  btnPrimary: { backgroundColor: colors.primaryStrong },
-  btnDisabled: { backgroundColor: 'rgba(255,255,255,0.06)' },
-  btnText: { color: colors.text, fontWeight: '700', fontSize: 14 },
-  btnTextDisabled: { color: colors.textFaint, fontWeight: '700', fontSize: 14 },
 })

@@ -22,7 +22,6 @@ import PerfilScreen from '../screens/perfil/PerfilScreen'
 import ImportarScreen from '../screens/importar/ImportarScreen'
 import ReportesScreen from '../screens/reportes/ReportesScreen'
 import PlanesScreen from '../screens/planes/PlanesScreen'
-import PagoScreen from '../screens/planes/PagoScreen'
 import { colors } from '../theme/theme'
 
 const Stack = createNativeStackNavigator()
@@ -66,7 +65,7 @@ const MAS_SECCIONES = [
   {
     titulo: 'Cuenta',
     items: [
-      { icon: '⭐', label: 'Planes', hint: 'Mejora tu Aura', screen: 'Planes' },
+      { icon: '⭐', label: 'Mi plan', hint: 'Lo que incluye', screen: 'Planes' },
       { icon: '👤', label: 'Mi perfil', hint: 'Datos y sesión', screen: 'Perfil' },
     ],
   },
@@ -152,7 +151,6 @@ function MasNavigator() {
       <MasStack.Screen name="Importar" component={ImportarScreen} />
       <MasStack.Screen name="Reportes" component={ReportesScreen} />
       <MasStack.Screen name="Planes" component={PlanesScreen} />
-      <MasStack.Screen name="Pago" component={PagoScreen} />
       <MasStack.Screen name="Perfil" component={PerfilScreen} />
     </MasStack.Navigator>
   )

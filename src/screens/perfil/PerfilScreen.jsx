@@ -17,17 +17,42 @@ export default function PerfilScreen({ navigation }) {
   const [newPass2, setNewPass2] = useState('')
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
+  const [deletePass, setDeletePass] = useState('')
+  const [deleteMsg, setDeleteMsg] = useState('')
 
   async function cambiarPassword() {
     if (newPass !== newPass2) { setMsg('Las contraseñas no coinciden.'); return }
     if (newPass.length < 8) { setMsg('Mínimo 8 caracteres.'); return }
     setLoading(true); setMsg('')
     try {
-      await api.post('/usuarios/password/change/', { old_password: oldPass, new_password: newPass })
-      setMsg('✅ Contraseña actualizada.')
+      await api.post('/usuarios/password/change/', { current_password: oldPass, new_password: newPass })
       setOldPass(''); setNewPass(''); setNewPass2('')
       setSeccion(null)
+      // El servidor cierra todas las sesiones al cambiar la contraseña.
+      Alert.alert('Contraseña actualizada', 'Vuelve a iniciar sesión con tu nueva contraseña.', [{ text: 'OK', onPress: logout }])
     } catch (e) { setMsg(getApiErrorMessage(e, 'Error al cambiar contraseña.')) }
+    finally { setLoading(false) }
+  }
+
+  function confirmarEliminacion() {
+    if (!deletePass) { setDeleteMsg('Escribe tu contraseña para confirmar.'); return }
+    Alert.alert(
+      'Eliminar cuenta',
+      'Se borrarán tu cuenta y todos tus datos: ingresos, gastos, cuotas, cuentas y simulaciones. No se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Eliminar', style: 'destructive', onPress: eliminarCuenta },
+      ],
+    )
+  }
+
+  async function eliminarCuenta() {
+    setLoading(true); setDeleteMsg('')
+    try {
+      await api.post('/usuarios/cuenta/eliminar/', { password: deletePass })
+      setDeletePass('')
+      Alert.alert('Cuenta eliminada', 'Tus datos fueron eliminados. Gracias por usar Aura.', [{ text: 'OK', onPress: logout }])
+    } catch (e) { setDeleteMsg(getApiErrorMessage(e, 'No se pudo eliminar la cuenta.')) }
     finally { setLoading(false) }
   }
 
@@ -80,8 +105,23 @@ export default function PerfilScreen({ navigation }) {
           </View>
         )}
 
-        <MenuItem icon="⭐" label="Ver planes" onPress={() => navigation.navigate('Planes')} />
+        <MenuItem icon="⭐" label="Mi plan" onPress={() => navigation.navigate('Planes')} />
         <MenuItem icon="📊" label="Modo de proyección" onPress={() => Alert.alert('Proyección', `Modo actual: ${user?.projection_mode || 'automática'}`)} />
+        <MenuItem icon="🗑️" label="Eliminar cuenta" onPress={() => setSeccion(seccion === 'delete' ? null : 'delete')} active={seccion === 'delete'} />
+
+        {seccion === 'delete' && (
+          <View style={s.subForm}>
+            <Text style={s.deleteText}>
+              Se borrarán tu cuenta y todos tus datos financieros. Los registros de pagos se conservan
+              sin datos personales por obligaciones contables.
+            </Text>
+            <TextInput style={s.input} placeholder="Tu contraseña" placeholderTextColor="rgba(255,255,255,0.3)" secureTextEntry value={deletePass} onChangeText={setDeletePass} />
+            {deleteMsg ? <Text style={[s.msg, { color: colors.danger }]}>{deleteMsg}</Text> : null}
+            <TouchableOpacity style={[s.btn, s.btnDanger]} onPress={confirmarEliminacion} disabled={loading}>
+              {loading ? <ActivityIndicator color={colors.text} /> : <Text style={s.btnText}>Eliminar mi cuenta</Text>}
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       {/* Logout */}
@@ -124,6 +164,8 @@ const s = StyleSheet.create({
   msg: { fontSize: 13 },
   btn: { backgroundColor: colors.primaryStrong, borderRadius: 10, padding: 12, alignItems: 'center' },
   btnText: { color: colors.text, fontWeight: '700' },
+  btnDanger: { backgroundColor: colors.danger },
+  deleteText: { color: colors.textMuted, fontSize: 13, lineHeight: 19 },
   logoutBtn: { backgroundColor: 'rgba(248,113,113,0.1)', borderWidth: 1, borderColor: 'rgba(248,113,113,0.25)', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32, marginBottom: 20 },
   logoutText: { color: colors.danger, fontWeight: '700', fontSize: 15 },
   version: { color: 'rgba(255,255,255,0.2)', fontSize: 12 },
