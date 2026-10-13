@@ -1,9 +1,20 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import api from '../api/client'
 import { setTokens, clearTokens, getAccess, getRefresh } from '../api/authStorage'
 import { setMoneyCurrency } from '../utils/formatters'
 
 const AuthContext = createContext(null)
+
+// Lo que el Dashboard guarda en el teléfono (resumen en caché, pasos del primer
+// uso) es dato financiero: al cerrar sesión no se deja en el equipo.
+async function limpiarDatosLocales() {
+  try {
+    const keys = await AsyncStorage.getAllKeys()
+    const propias = keys.filter((k) => k.startsWith('aura_cache_') || k.startsWith('aura_onb_'))
+    if (propias.length) await AsyncStorage.multiRemove(propias)
+  } catch {}
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -95,6 +106,7 @@ export function AuthProvider({ children }) {
       // Even if the API logout fails, local session must be cleared.
     } finally {
       await clearTokens()
+      await limpiarDatosLocales()
       setUser(null)
       setMoneyCurrency('USD')
     }

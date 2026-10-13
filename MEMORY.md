@@ -18,6 +18,7 @@ Expo y React Native cambian **mucho** entre versiones; romper la matriz de compa
 ## 3. Correr / validar
 - `npx expo start` (Metro en **8081**). Expo Go: escanear QR o `exp://<IP-LAN>:8081`. Reload: agitar el teléfono.
 - **Antes de cada commit: `npm run verificar`** (`scripts/verificar.js`): sintaxis + identificadores sin importar + hooks después de un `return` temprano. Babel solo NO alcanza: esos dos errores pasaban la sintaxis y tiraban la app en runtime.
+- Para validar imports/paquetes/assets de verdad: `npx expo export --platform android --output-dir <tmp>` (arma el bundle completo sin dispositivo).
 - Como pega a PROD, se loguea con **cuenta real** de aura.binnso.com (las de prueba local no sirven acá).
 
 ## 4. Build / publicar (EAS)
@@ -32,12 +33,16 @@ Expo y React Native cambian **mucho** entre versiones; romper la matriz de compa
 - Commits **SIN coautoría**. El **remoto es la fuente de verdad** (se trabaja desde varias máquinas).
 
 ## 6. Estado y pendientes
-- **Hecho**: pulido UX (tokens, `ScreenHeader`, safe-area). Outlook de proyección en el Dashboard (meses en positivo/rojo). Navegador de mes + chip `vN` en Gastos fijos.
-- **Pendiente (paridad con web)**: pantalla "Categorías"; simulador "Agregar a mis gastos" por tipo; asistente **multi-movimiento** (hoy consume objeto plano = un solo movimiento); fuente de marca **Plus Jakarta Sans** (la web ya la tiene self-hosted). El **versionado** de gastos NO existe en móvil (es solo web).
+- **Hecho**: pulido UX (tokens, `ScreenHeader`, safe-area). Navegador de mes + chip `vN` en Gastos fijos.
+- **Dashboard (oct 2026)**: héroe "Te queda este mes" = balance REAL del mes (no el proyectado, decisión de producto). Cuenta nueva (sin ingresos ni gastos) → solo lista de 3 pasos (ahorro inicial = ingreso puntual "Ahorros iniciales", ingreso, gasto). Abre al instante con caché (`useOfflineCache`, por usuario; se borra al cerrar sesión) y recarga al volver a la pestaña (`useFocusEffect`). Atajo "🐭 Cuentas con personas" solo si hay saldos pendientes.
+- **Proyección + Simulador = una pantalla** (`screens/proyeccion/ProyeccionScreen.jsx`; root stack `Proyeccion` y Más → `Simulador` con `simular: true`). Gráfica `BalanceChart`: saldo de cierre, se arrastra el dedo (PanResponder; desactiva el scroll del padre mientras tanto). Simulador local y en vivo (`utils/simulacion.js`, fórmulas = `back/apps/simulador/services.py`): Pago único / Préstamo / Gasto mensual + "Agregar a mis gastos" (mismos endpoints que la web).
+- Íconos: `import Ionicons from '@expo/vector-icons/Ionicons'` (no desde el índice: empaqueta las fuentes de TODOS los sets).
+- **Pendiente (paridad con web)**: pantalla "Categorías"; asistente **multi-movimiento** (hoy consume objeto plano = un solo movimiento); fuente de marca **Plus Jakarta Sans** (la web ya la tiene self-hosted). El **versionado** de gastos NO existe en móvil (es solo web).
 
 - **Copy (Ecuador)**: mismas reglas que la web — tuteo (nunca voseo), "registrar" (no "cargar"), "contraseña" (no "clave"), plan "Gratis" (no "Free"), errores "No pudimos … Intenta de nuevo.", sin "correctamente", "gastos a cuotas" (no "diferidos") en textos visibles. El asistente se llama **"Dile a Aura"**. Al cambiar un texto en la web, replicarlo aquí (y viceversa).
 
 ## 7. Novedades (changelog — agregar arriba)
+- **2026-10-13** — Entregas 2 y 3 de la auditoría: auth unificado con el logo real, pestañas Ionicons, Dashboard nuevo (héroe, cuenta nueva, caché), Proyección interactiva + simulador en vivo con "Agregar a mis gastos". **Prioridad del usuario: paridad FUNCIONAL total con la web** (mucha gente solo usará el móvil).
 - **2026-10-13** — Auditoría UX "Primer minuto en Aura" (https://claude.ai/artifact/MuYCK3WfygDfvANwDgnjSD), aprobada por el usuario. Entrega 1: fix de 2 caídas (ProjectionChart sin importar `TouchableOpacity` → crash en Pro al pasar de 12 meses; Simulador con hook después de return). Ícono, ícono adaptativo y splash con el logo real (sobre blanco: la barra azul marino del logo no se ve sobre el fondo oscuro). Fuera del Dashboard: "Cerrar sesión" (sin confirmar) y la insignia de plan. `npm run verificar`.
 - **2026-10-13** — Copy alineado con la web: ortografía, asistente "Dile a Aura" (+ accessibilityLabel en el botón central), estados vacíos por pestaña, textos de proyección sin jerga ("Meses atrás/adelante", "Con tu historial"). Pendiente: `Aura v1.0` hardcodeado en Perfil (la app es 1.4.0).
 - **2026-10** — Navegador de mes + chip de versión en Gastos fijos. Outlook de proyección en el Dashboard.

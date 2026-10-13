@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { colors } from '../../theme/theme'
 import {
   View,
   Text,
@@ -9,29 +8,33 @@ import {
   TouchableOpacity,
   RefreshControl,
   TextInput,
-  Modal,
 } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useFocusEffect } from '@react-navigation/native'
+import Ionicons from '@expo/vector-icons/Ionicons'
+import Svg, { Line, Path } from 'react-native-svg'
 
 import { useAuth } from '../../context/AuthContext'
 import api from '../../api/client'
 import { formatMoney, formatDate } from '../../utils/formatters'
 import { montoEfectivoMes } from '../../utils/frecuencias'
-import ProjectionChart from '../../components/ui/ProjectionChart'
-import ProjectionControls, { getProjectionHelp } from '../../components/ui/ProjectionControls'
 import NotificationBell from '../../components/ui/NotificationBell'
 import SaludFinancieraCard from '../../components/ui/SaludFinancieraCard'
 import { getApiErrorMessage } from '../../api/errors'
 import { useTopInset } from '../../hooks/useTopInset'
+import { useOfflineCache } from '../../hooks/useOfflineCache'
+import { colors } from '../../theme/theme'
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
-// Los cuatro registros mas frecuentes. Navegan al tab con el formulario ya
-// abierto en el tipo correcto.
+// Los cuatro registros mas frecuentes, el del dia a dia primero. Navegan a la
+// pestaña con el formulario ya abierto en el tipo correcto. Antes se llamaban
+// "Gasto / Consumo / Ingreso / Puntual", nombres internos que nadie entendia.
 const QUICK_ACTIONS = [
-  { key: 'gasto', icon: '💸', label: 'Gasto', screen: 'Gastos', tab: 'fijos' },
-  { key: 'variable', icon: '🛒', label: 'Consumo', screen: 'Gastos', tab: 'variables' },
-  { key: 'ingreso', icon: '💰', label: 'Ingreso', screen: 'Ingresos', tab: 'fijos' },
-  { key: 'puntual', icon: '⚡', label: 'Puntual', screen: 'Gastos', tab: 'puntuales' },
+  { key: 'hoy', icon: 'cafe-outline', label: 'Gasto de hoy', screen: 'Gastos', tab: 'puntuales' },
+  { key: 'fijo', icon: 'repeat', label: 'Gasto fijo', screen: 'Gastos', tab: 'fijos' },
+  { key: 'variable', icon: 'pulse', label: 'Gasto variable', screen: 'Gastos', tab: 'variables' },
+  { key: 'ingreso', icon: 'cash-outline', label: 'Ingreso', screen: 'Ingresos', tab: 'fijos' },
 ]
 
 const EMPTY_MOVEMENTS = {
@@ -41,6 +44,12 @@ const EMPTY_MOVEMENTS = {
   gastosNoCorrientes: [],
   diferidos: [],
 }
+
+// El ahorro inicial se guarda como un ingreso puntual con esta descripcion; asi
+// se reconoce para marcar el primer paso como hecho.
+const AHORRO_INICIAL = 'Ahorros iniciales'
+// La cache del resumen sirve para abrir al instante; pasado esto ya no se usa.
+const CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000
 
 function startOfMonth(date) {
   return new Date(date.getFullYear(), date.getMonth(), 1)
@@ -143,85 +152,62 @@ function getFrequencyLabel(value) {
   return labels[value] || 'Mensual'
 }
 
+// Una frase corta que traduce la tasa de ahorro a "como voy".
+function estadoDelMes({ totalIngresos, totalGastos, tasa, mesLabel }) {
+  if (totalIngresos <= 0 && totalGastos <= 0) return { text: `Aún no hay movimientos en ${mesLabel}`, color: colors.textMuted }
+  if (totalIngresos <= 0) return { text: `Aún no registras ingresos en ${mesLabel}`, color: colors.warning }
+  if (tasa < 0) return { text: 'Gastas más de lo que entra', color: colors.danger }
+  const pct = `${Math.round(tasa)}%`
+  if (tasa >= 20) return { text: `Vas bien: ahorras el ${pct}`, color: colors.success }
+  if (tasa >= 10) return { text: `Vas justo: ahorras el ${pct}`, color: colors.warning }
+  return { text: `Al límite: ahorras el ${pct}`, color: colors.orange }
+}
+
 export default function DashboardScreen({ navigation }) {
-  const { user, fetchMe } = useAuth()
+  const { user } = useAuth()
+  const userKey = user?.id ?? user?.email ?? 'anon'
+  // Se desestructura: el objeto que devuelve el hook es nuevo en cada render y,
+  // usado como dependencia, dispararia una recarga infinita.
+  const { guardar: guardarCache, leer: leerCache } = useOfflineCache(`dashboard_${userKey}`)
   const currentMonth = useMemo(() => startOfMonth(new Date()), [])
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)
   const [ahorroInicial, setAhorroInicial] = useState('')
   const [savingAhorro, setSavingAhorro] = useState(false)
+  const [sinAhorro, setSinAhorro] = useState(false)
   const [movements, setMovements] = useState(EMPTY_MOVEMENTS)
   const [report, setReport] = useState(null)
   const [reportMonthKey, setReportMonthKey] = useState('')
   const [projection, setProjection] = useState(null)
+  const [cuentasPersonas, setCuentasPersonas] = useState({ meDeben: 0, debo: 0 })
   const [showNegDetail, setShowNegDetail] = useState(false)
   const [loading, setLoading] = useState(true)
   const [reportLoading, setReportLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
-  const [expandedDetail, setExpandedDetail] = useState(null) // 'income' | 'expense' | null
+  const [detalleAbierto, setDetalleAbierto] = useState(false)
+  const [detalleTipo, setDetalleTipo] = useState('expense') // 'expense' | 'income'
   const reportRequestRef = useRef(0)
+  const tieneDatosRed = useRef(false)
+  const topPad = useTopInset()
 
+  // El Dashboard pide la proyeccion con el horizonte por defecto del plan; los
+  // ajustes finos viven en la pantalla Proyeccion.
   const projectionDisplayMonths = Math.max(2, Number(user?.feature_access?.projection_months || 6))
   const freeFutureMonths = Math.max(1, Math.floor(projectionDisplayMonths / 2))
   const freePastMonths = Math.max(1, projectionDisplayMonths - freeFutureMonths)
   const advancedProjectionEnabled = Boolean(user?.feature_access?.advanced_projection_enabled)
   const advancedProjectionMaxMonths = Math.max(1, Number(user?.feature_access?.advanced_projection_months || 120))
-  // Los meses son el punto de partida: con el plan Pro el usuario los ajusta con
-  // los selectores, en Free quedan fijos en lo que da su plan.
-  const projectionFutureMonths = advancedProjectionEnabled ? Math.min(12, advancedProjectionMaxMonths) : freeFutureMonths
-  const projectionPastMonths = advancedProjectionEnabled ? 6 : freePastMonths
+  const futureMonths = advancedProjectionEnabled ? Math.min(12, advancedProjectionMaxMonths) : freeFutureMonths
+  const pastMonths = advancedProjectionEnabled ? 6 : freePastMonths
 
-  const [pastMonths, setPastMonths] = useState(projectionPastMonths)
-  const [futureMonths, setFutureMonths] = useState(projectionFutureMonths)
-  const [seriesFocus, setSeriesFocus] = useState('all')
-  const [projectionMode, setProjectionMode] = useState('simple')
-  const [modeSaving, setModeSaving] = useState(false)
-  const [recalculando, setRecalculando] = useState(false)
-  const [chartExpandido, setChartExpandido] = useState(false)
-
-  // Sin el plan Pro la proyeccion siempre es simple, no importa lo guardado.
+  const onbKey = `aura_onb_sin_ahorro_${userKey}`
   useEffect(() => {
-    setProjectionMode(advancedProjectionEnabled ? (user?.projection_mode || 'automatica') : 'simple')
-  }, [advancedProjectionEnabled, user?.projection_mode])
+    AsyncStorage.getItem(onbKey).then((v) => setSinAhorro(v === '1')).catch(() => {})
+  }, [onbKey])
 
-  // El horizonte guardado puede exceder el tope del plan (ej. si bajo de Pro a
-  // Free): se recorta en vez de pedirle a la API algo que va a rechazar.
-  useEffect(() => {
-    if (futureMonths > advancedProjectionMaxMonths) setFutureMonths(advancedProjectionMaxMonths)
-  }, [advancedProjectionMaxMonths, futureMonths])
-
-  // El modo vive en el perfil del usuario, no en la pantalla: se guarda para que
-  // la web y la app muestren la misma proyeccion.
-  async function cambiarModo(nextMode) {
-    if (nextMode === projectionMode || modeSaving) return
-    const previo = projectionMode
-    setProjectionMode(nextMode)
-    setModeSaving(true)
-    try {
-      await api.patch('/usuarios/perfil/', { projection_mode: nextMode })
-      await fetchMe()
-    } catch (err) {
-      setProjectionMode(previo)
-      setError(getApiErrorMessage(err, 'No pudimos cambiar el modo. Intenta de nuevo.'))
-    } finally {
-      setModeSaving(false)
-    }
-  }
-
-  async function recalcularSaldos() {
-    if (recalculando) return
-    setRecalculando(true)
-    try {
-      await api.post('/finanzas/saldo-mes/recalcular/')
-      await Promise.all([
-        loadBase(selectedMonth, { silent: true }),
-        loadReport(selectedMonth, { silent: true }),
-      ])
-    } catch (err) {
-      setError(getApiErrorMessage(err, 'No pudimos recalcular tu saldo. Intenta de nuevo.'))
-    } finally {
-      setRecalculando(false)
-    }
+  function omitirAhorro() {
+    setSinAhorro(true)
+    AsyncStorage.setItem(onbKey, '1').catch(() => {})
   }
 
   const loadBase = useCallback(async (month, { silent = false } = {}) => {
@@ -240,18 +226,24 @@ export default function DashboardScreen({ navigation }) {
         api.get(`/finanzas/proyeccion-acumulada/?months=${futureMonths}&past_months=${pastMonths}`),
       ])
 
-      setMovements({
+      const nextMovements = {
         ingresos: dashboardResponse.data.ingresos || [],
         ingresosPuntuales: dashboardResponse.data.ingresos_puntuales || [],
         gastosCorrientes: dashboardResponse.data.gastos_corrientes || [],
         gastosNoCorrientes: dashboardResponse.data.gastos_no_corrientes || [],
         diferidos: dashboardResponse.data.diferidos || [],
-      })
+      }
+      tieneDatosRed.current = true
+      setMovements(nextMovements)
       setProjection(projectionResponse.data || null)
+      return { movements: nextMovements, projection: projectionResponse.data || null }
     } catch (err) {
-      setMovements(EMPTY_MOVEMENTS)
-      setProjection(null)
+      if (!tieneDatosRed.current) {
+        setMovements(EMPTY_MOVEMENTS)
+        setProjection(null)
+      }
       setError(getApiErrorMessage(err, 'No pudimos cargar tu resumen. Intenta de nuevo.'))
+      return null
     } finally {
       setLoading(false)
     }
@@ -268,16 +260,18 @@ export default function DashboardScreen({ navigation }) {
       const { data } = await api.get(
         `/finanzas/reporte/?anio=${month.getFullYear()}&mes=${month.getMonth() + 1}`,
       )
-      if (requestId !== reportRequestRef.current) return
+      if (requestId !== reportRequestRef.current) return null
       setReport(data)
       setReportMonthKey(targetMonthKey)
+      return data
     } catch (err) {
-      if (requestId !== reportRequestRef.current) return
-      setReport(null)
-      setReportMonthKey('')
+      if (requestId !== reportRequestRef.current) return null
       if (!silent) {
+        setReport(null)
+        setReportMonthKey('')
         setError(getApiErrorMessage(err, 'No pudimos cargar el resumen del mes. Intenta de nuevo.'))
       }
+      return null
     } finally {
       if (requestId === reportRequestRef.current) {
         setReportLoading(false)
@@ -285,36 +279,88 @@ export default function DashboardScreen({ navigation }) {
     }
   }, [])
 
+  // Saldos pendientes con personas: el atajo solo aparece si hay algo que cobrar
+  // o pagar, en vez de ocupar siempre el primer lugar de la pantalla.
+  const loadCuentasPersonas = useCallback(async () => {
+    try {
+      const { data } = await api.get('/finanzas/cuentas-por-cobrar/')
+      const items = data?.results ?? data ?? []
+      const pendientes = items.filter((i) => i.estado !== 'pagado')
+      const suma = (meDeben) => pendientes
+        .filter((i) => (i.direccion === 'me_deben') === meDeben)
+        .reduce((acc, i) => acc + Number(i.saldo_pendiente || 0), 0)
+      setCuentasPersonas({ meDeben: suma(true), debo: suma(false) })
+    } catch {
+      // Es un atajo: si falla, simplemente no se muestra.
+    }
+  }, [])
+
+  // Abrir al instante con el ultimo resumen guardado; la red lo reemplaza apenas
+  // responde. Solo aplica al mes actual, que es el que se abre siempre.
   useEffect(() => {
-    void loadBase(selectedMonth)
-  }, [loadBase, selectedMonth])
+    let active = true
+    leerCache(CACHE_MAX_AGE).then((c) => {
+      if (!active || !c || tieneDatosRed.current) return
+      setMovements(c.movements || EMPTY_MOVEMENTS)
+      setProjection(c.projection || null)
+      if (c.report) {
+        setReport(c.report)
+        setReportMonthKey(c.reportMonthKey)
+      }
+      setLoading(false)
+      setReportLoading(false)
+    })
+    return () => { active = false }
+  }, [leerCache])
+
+  const cargarTodo = useCallback(async (month, opts) => {
+    const [base, rep] = await Promise.all([loadBase(month, opts), loadReport(month, opts)])
+    if (base && rep && formatMonthKey(month) === formatMonthKey(currentMonth)) {
+      guardarCache({ ...base, report: rep, reportMonthKey: formatMonthKey(month) })
+    }
+  }, [loadBase, loadReport, guardarCache, currentMonth])
 
   useEffect(() => {
-    void loadReport(selectedMonth)
-  }, [loadReport, selectedMonth])
+    void cargarTodo(selectedMonth, { silent: tieneDatosRed.current })
+  }, [cargarTodo, selectedMonth])
+
+  useEffect(() => { void loadCuentasPersonas() }, [loadCuentasPersonas])
+
+  // Al volver a esta pestaña (por ejemplo, despues de registrar un gasto) se
+  // actualiza sin spinner. Las funciones van por ref para que cambiar de mes no
+  // dispare una segunda carga ademas del efecto de arriba.
+  const latest = useRef({})
+  latest.current = { cargarTodo, loadCuentasPersonas, selectedMonth }
+  const primerFoco = useRef(true)
+  useFocusEffect(useCallback(() => {
+    if (primerFoco.current) {
+      primerFoco.current = false
+      return
+    }
+    const { cargarTodo: recargar, loadCuentasPersonas: recargarCuentas, selectedMonth: mes } = latest.current
+    void recargar(mes, { silent: true })
+    void recargarCuentas()
+  }, []))
 
   // El ahorro inicial se guarda como un ingreso puntual con fecha de hoy, igual
   // que en la web: asi la proyeccion y el colchon arrancan desde el saldo real
   // en vez de desde cero.
   async function guardarAhorroInicial() {
-    const monto = parseFloat(ahorroInicial)
+    const monto = parseFloat(String(ahorroInicial).replace(',', '.'))
     if (!monto || monto <= 0 || savingAhorro) return
     setSavingAhorro(true)
     try {
       const hoy = new Date()
       const fecha = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`
       await api.post('/finanzas/ingresos-puntuales/', {
-        descripcion: 'Ahorros iniciales',
+        descripcion: AHORRO_INICIAL,
         monto,
         fecha,
         notas: 'Saldo con el que empiezas en Aura',
         incluir_en_proyeccion: true,
       })
       setAhorroInicial('')
-      await Promise.all([
-        loadBase(selectedMonth, { silent: true }),
-        loadReport(selectedMonth, { silent: true }),
-      ])
+      await cargarTodo(selectedMonth, { silent: true })
     } catch (err) {
       setError(getApiErrorMessage(err, 'No pudimos guardar tu ahorro inicial. Intenta de nuevo.'))
     } finally {
@@ -326,10 +372,7 @@ export default function DashboardScreen({ navigation }) {
     setRefreshing(true)
     setError('')
     try {
-      await Promise.all([
-        loadBase(selectedMonth, { silent: true }),
-        loadReport(selectedMonth, { silent: true }),
-      ])
+      await Promise.all([cargarTodo(selectedMonth, { silent: true }), loadCuentasPersonas()])
     } finally {
       setRefreshing(false)
     }
@@ -379,8 +422,8 @@ export default function DashboardScreen({ navigation }) {
     const minMonth = minCandidates.reduce((earliest, candidate) => (
       candidate < earliest ? candidate : earliest
     ), minCandidates[0])
-    const fallbackMaxMonth = maxCandidates.reduce((latest, candidate) => (
-      candidate > latest ? candidate : latest
+    const fallbackMaxMonth = maxCandidates.reduce((latestMonth, candidate) => (
+      candidate > latestMonth ? candidate : latestMonth
     ), maxCandidates[0])
     const projectionStart = projection?.series?.[0]?.month ? parseMonthKey(projection.series[0].month) : null
     const projectionEnd = projection?.series?.length
@@ -401,8 +444,10 @@ export default function DashboardScreen({ navigation }) {
     })
   }, [monthBounds])
 
-  const selectedMonthLabel = `${MESES[selectedMonth.getMonth()]} ${selectedMonth.getFullYear()}`
+  const selectedMonthName = MESES[selectedMonth.getMonth()]
+  const selectedMonthLabel = `${selectedMonthName} ${selectedMonth.getFullYear()}`
   const selectedMonthKey = formatMonthKey(selectedMonth)
+  const isCurrentMonth = selectedMonthKey === formatMonthKey(currentMonth)
   const isFutureMonth = selectedMonth > currentMonth
   const canGoPrevMonth = selectedMonth > monthBounds.minMonth
   const canGoNextMonth = selectedMonth < monthBounds.maxMonth
@@ -477,14 +522,6 @@ export default function DashboardScreen({ navigation }) {
     ].sort((a, b) => b.amount - a.amount)
   }, [fixedExpensesThisMonth, installmentsThisMonth, punctualExpensesThisMonth, selectedMonth])
 
-  const movementCount = (
-    movements.ingresos.length
-    + movements.ingresosPuntuales.length
-    + movements.gastosCorrientes.length
-    + movements.gastosNoCorrientes.length
-    + movements.diferidos.length
-  )
-
   const fixedIncomeTotal = useMemo(
     () => fixedIncomesThisMonth.reduce((sum, item) => sum + montoEfectivoMes(item.monto, item.frecuencia, item.fecha_inicio, selectedMonth.getFullYear(), selectedMonth.getMonth() + 1), 0),
     [fixedIncomesThisMonth, selectedMonth],
@@ -506,124 +543,90 @@ export default function DashboardScreen({ navigation }) {
     [punctualExpensesThisMonth],
   )
 
-  const breakdownItems = [
+  const gastosFijos = Number(reportSummary?.gastos_corrientes ?? fixedExpenseTotal)
+  const gastosCuotas = Number(reportSummary?.cuotas ?? installmentTotal)
+  const gastosPuntuales = Number(reportSummary?.gastos_puntuales ?? punctualExpenseTotal)
+  const breakdownIncome = [
     { id: 'income-fixed', label: 'Ingresos fijos', value: Number(reportSummary?.ingresos_fijos ?? fixedIncomeTotal), color: colors.success },
     { id: 'income-punctual', label: 'Ingresos puntuales', value: Number(reportSummary?.ingresos_puntuales ?? punctualIncomeTotal), color: '#34D399' },
-    { id: 'expense-fixed', label: 'Gastos fijos', value: Number(reportSummary?.gastos_corrientes ?? fixedExpenseTotal), color: colors.danger },
-    { id: 'expense-installments', label: 'Cuotas activas', value: Number(reportSummary?.cuotas ?? installmentTotal), color: '#FB923C' },
-    { id: 'expense-punctual', label: 'Gastos puntuales', value: Number(reportSummary?.gastos_puntuales ?? punctualExpenseTotal), color: '#FCA5A5' },
   ]
-
-  const selectedProjectionPoint = projection?.series?.find(
-    (item) => item.month === selectedMonthKey,
-  ) || null
-  const currentProjectionPoint = projection?.series?.find((item) => item.is_current) || null
-  const heroValue = selectedProjectionPoint
-    ? Number(selectedProjectionPoint.closing_balance || 0)
-    : Number(reportSummary?.balance ?? 0)
-  const heroLabel = selectedProjectionPoint
-    ? (selectedProjectionPoint.is_real ? 'Saldo al cierre' : 'Saldo proyectado al cierre')
-    : 'Balance del mes'
-  const heroSub = selectedProjectionPoint
-    ? (selectedProjectionPoint.is_real
-        ? 'Calculado con los movimientos del mes seleccionado'
-        : 'Estimado con tu proyección actual')
-    : 'Ingresos menos gastos del mes seleccionado'
-  const availableBalance = currentProjectionPoint
-    ? Number(currentProjectionPoint.closing_balance || 0)
-    : Number(reportSummary?.balance ?? 0)
-  const availableBalanceLabel = currentProjectionPoint?.label || `${MESES[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`
+  const breakdownExpense = [
+    { id: 'expense-fixed', label: 'Gastos fijos', value: gastosFijos, color: colors.danger },
+    { id: 'expense-installments', label: 'Cuotas', value: gastosCuotas, color: colors.orange },
+    { id: 'expense-punctual', label: 'Gastos puntuales', value: gastosPuntuales, color: '#FCA5A5' },
+  ]
 
   const totalIngresos = Number(reportSummary?.total_ingresos ?? (fixedIncomeTotal + punctualIncomeTotal))
   const totalGastos = Number(reportSummary?.total_gastos ?? (fixedExpenseTotal + installmentTotal + punctualExpenseTotal))
   const totalBalance = Number(reportSummary?.balance ?? (totalIngresos - totalGastos))
   const tasaAhorro = Number(
     reportSummary?.tasa_ahorro
-    ?? (totalIngresos > 0 ? (((totalBalance / totalIngresos) * 100).toFixed(1)) : 0),
+    ?? (totalIngresos > 0 ? ((totalBalance / totalIngresos) * 100) : 0),
   )
-  const tasaPct = Math.min(Math.max(tasaAhorro, 0), 100)
-  const gastoPct = totalIngresos > 0 ? Math.min(100, Math.round((totalGastos / totalIngresos) * 100)) : 0
-  const gastoPctColor = gastoPct >= 90 ? colors.danger : gastoPct >= 75 ? '#FB923C' : gastoPct >= 50 ? '#FBBF24' : colors.success
-
-  const projectionWindowCopy = projection
-    ? `${projection.display_past_months || projectionPastMonths} meses reales · ${projection.months || projectionFutureMonths} proyectados`
-    : `${projectionPastMonths} meses reales · ${projectionFutureMonths} proyectados`
+  const gastoPct = totalIngresos > 0 ? Math.round((totalGastos / totalIngresos) * 100) : 0
+  const estado = estadoDelMes({ totalIngresos, totalGastos, tasa: tasaAhorro, mesLabel: selectedMonthName.toLowerCase() })
+  // La barra mide los gastos contra lo que entro; si se gasto mas, contra el gasto.
+  const barBase = Math.max(totalIngresos, totalGastos, 1)
+  const heroLabel = isCurrentMonth
+    ? 'Te queda este mes'
+    : isFutureMonth ? `Te quedaría en ${selectedMonthName.toLowerCase()}` : `Te quedó en ${selectedMonthName.toLowerCase()}`
 
   // Ultimo punto proyectado: su saldo de cierre es "con lo que terminarias".
-  const projLast = projection?.series?.length ? projection.series[projection.series.length - 1] : null
+  const series = projection?.series || []
+  const projLast = series.length ? series[series.length - 1] : null
   const projCierre = Number(projLast?.closing_balance ?? 0)
-  // Resumen del horizonte (ya acotado por el plan): meses en positivo vs en rojo.
-  const proyectados = (projection?.series || []).filter((p) => !p.is_real)
+  const proyectados = series.filter((p) => !p.is_real)
   const mesesEnRojo = proyectados.filter((p) => Number(p.closing_balance ?? 0) < 0)
   const mesesEnPositivo = proyectados.length - mesesEnRojo.length
-  const esModoSimple = projection?.projection_mode === 'simple'
-  const topPad = useTopInset()
+
+  // Pasos del primer uso.
+  const tieneAhorro = movements.ingresosPuntuales.some((i) => i.descripcion === AHORRO_INICIAL)
+  const ingresosReales = movements.ingresos.length
+    + movements.ingresosPuntuales.filter((i) => i.descripcion !== AHORRO_INICIAL).length
+  const gastosRegistrados = movements.gastosCorrientes.length + movements.gastosNoCorrientes.length + movements.diferidos.length
+  const pasos = { ahorro: tieneAhorro || sinAhorro, ingreso: ingresosReales > 0, gasto: gastosRegistrados > 0 }
+  const pasosListos = Object.values(pasos).filter(Boolean).length
+  // Sin ingresos ni gastos no hay nada que mostrar con montos: en vez de veinte
+  // "$0.00", solo los pasos para empezar.
+  const cuentaNueva = !pasos.ingreso && !pasos.gasto
 
   if (loading && reportLoading) {
-    return (
-      <View style={s.loaderScreen}>
-        <ActivityIndicator color={colors.primary} size="large" />
-        <Text style={s.loaderText}>Cargando tu resumen...</Text>
-      </View>
-    )
+    return <DashboardSkeleton topPad={topPad} />
   }
+
+  const checklist = pasosListos < 3 ? (
+    <Onboarding
+      pasos={pasos}
+      pasosListos={pasosListos}
+      ahorroInicial={ahorroInicial}
+      setAhorroInicial={setAhorroInicial}
+      savingAhorro={savingAhorro}
+      onGuardarAhorro={guardarAhorroInicial}
+      onOmitirAhorro={omitirAhorro}
+      onIngreso={() => navigation.navigate('Ingresos', { autoNew: true, tab: 'fijos' })}
+      onGasto={() => navigation.navigate('Gastos', { autoNew: true, tab: 'puntuales' })}
+      onDileAAura={() => navigation.navigate('Aura')}
+    />
+  ) : null
 
   return (
     <ScrollView
       style={s.root}
       contentContainerStyle={[s.content, { paddingTop: topPad }]}
-      refreshControl={(
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={colors.primary}
-        />
-      )}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
       <View style={s.header}>
         <View style={{ flex: 1 }}>
           <Text style={s.greeting}>
-            {getGreeting()}
+            {cuentaNueva ? 'Hola' : getGreeting()}
             {user?.username ? `, ${user.username}` : ''}
           </Text>
-          <Text style={s.subtitle}>Tu mes, claro y sin rodeos.</Text>
-          <SaludFinancieraCard variant="chip" navigation={navigation} />
+          {cuentaNueva
+            ? <Text style={s.subtitle}>Tres pasos y Aura ya puede decirte cómo vas.</Text>
+            : <SaludFinancieraCard variant="chip" navigation={navigation} />}
         </View>
         <NotificationBell />
       </View>
-
-      <View style={s.monthSwitcher}>
-        <TouchableOpacity
-          style={[s.monthNavBtn, !canGoPrevMonth && s.monthNavBtnDisabled]}
-          onPress={() => setSelectedMonth((current) => addMonths(current, -1))}
-          disabled={!canGoPrevMonth}
-        >
-          <Text style={s.monthNavArrow}>‹</Text>
-        </TouchableOpacity>
-        <View style={s.monthSwitcherCenter}>
-          <Text style={s.monthSwitcherLabel}>{selectedMonthLabel}</Text>
-          {isFutureMonth && <Text style={s.monthFutureHint}>Proyectado</Text>}
-        </View>
-        <TouchableOpacity
-          style={[s.monthNavBtn, !canGoNextMonth && s.monthNavBtnDisabled]}
-          onPress={() => setSelectedMonth((current) => addMonths(current, 1))}
-          disabled={!canGoNextMonth}
-        >
-          <Text style={s.monthNavArrow}>›</Text>
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity
-        style={s.shortcutCard}
-        onPress={() => navigation.navigate('Más', { screen: 'Cobros' })}
-      >
-        <Text style={s.shortcutIcon}>💳</Text>
-        <View style={{ flex: 1 }}>
-          <Text style={s.shortcutTitle}>Cobros y deudas</Text>
-          <Text style={s.shortcutHint}>Qué te deben y qué debes</Text>
-        </View>
-        <Text style={s.shortcutArrow}>›</Text>
-      </TouchableOpacity>
 
       {error ? (
         <View style={s.errorCard}>
@@ -632,244 +635,143 @@ export default function DashboardScreen({ navigation }) {
         </View>
       ) : null}
 
-      {movementCount === 0 && (
-        <View style={s.emptyCard}>
-          <Text style={s.emptyTitle}>Empieza en 10 segundos</Text>
-          <Text style={s.emptyText}>
-            Registra un ingreso, un gasto o importa tu historial. Con eso Aura ya empieza a ayudarte.
-          </Text>
-
-          <View style={s.ahorroBlock}>
-            <Text style={s.ahorroLabel}>¿Ya tienes ahorros? Empieza con tu saldo real</Text>
-            <View style={s.ahorroRow}>
-              <Text style={s.ahorroPrefix}>$</Text>
-              <TextInput
-                style={s.ahorroInput}
-                value={ahorroInicial}
-                onChangeText={setAhorroInicial}
-                placeholder="Ej: 500"
-                placeholderTextColor="rgba(255,255,255,0.25)"
-                keyboardType="decimal-pad"
-                editable={!savingAhorro}
-              />
-              <TouchableOpacity
-                style={[s.ahorroBtn, (!ahorroInicial || savingAhorro) && s.ahorroBtnOff]}
-                onPress={guardarAhorroInicial}
-                disabled={!ahorroInicial || savingAhorro}
-              >
-                {savingAhorro
-                  ? <ActivityIndicator color="#07131F" size="small" />
-                  : <Text style={s.ahorroBtnText}>Empezar</Text>}
+      {cuentaNueva ? (
+        <>
+          {checklist}
+          <View style={[s.card, s.lockCard]}>
+            <Text style={s.cardTitle}>Si sigues así</Text>
+            <Sparkline values={[2, 2.4, 2.2, 3, 3.4, 3.2, 4, 4.6]} height={52} muted />
+            <View style={s.lockVeil}>
+              <Ionicons name="lock-closed" size={14} color={colors.textMuted} />
+              <Text style={s.lockText}>Tu proyección aparece cuando registres tu ingreso.</Text>
+            </View>
+          </View>
+          <TouchableOpacity onPress={() => navigation.navigate('Más', { screen: 'Importar' })} style={s.importLink}>
+            <Text style={s.importText}>¿Vienes de otra app? <Text style={s.link}>Importa tus movimientos</Text></Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <>
+          {/* Numero protagonista: el balance REAL del mes (lo que entro menos lo
+              que salio), no el saldo proyectado; un numero grande basado en la
+              proyeccion da una falsa tranquilidad. */}
+          <View style={s.hero}>
+            <View style={s.heroTop}>
+              <Text style={s.heroLabel}>{heroLabel}</Text>
+              <View style={s.monthNav}>
+                <TouchableOpacity
+                  style={[s.monthBtn, !canGoPrevMonth && s.monthBtnOff]}
+                  onPress={() => setSelectedMonth((current) => addMonths(current, -1))}
+                  disabled={!canGoPrevMonth}
+                  accessibilityLabel="Mes anterior"
+                  hitSlop={8}
+                >
+                  <Ionicons name="chevron-back" size={16} color={colors.primary} />
+                </TouchableOpacity>
+                <Text style={s.monthText}>{selectedMonthName.slice(0, 3)} {String(selectedMonth.getFullYear()).slice(2)}</Text>
+                <TouchableOpacity
+                  style={[s.monthBtn, !canGoNextMonth && s.monthBtnOff]}
+                  onPress={() => setSelectedMonth((current) => addMonths(current, 1))}
+                  disabled={!canGoNextMonth}
+                  accessibilityLabel="Mes siguiente"
+                  hitSlop={8}
+                >
+                  <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+            </View>
+            <View style={s.heroValueRow}>
+              <Text style={[s.heroValue, { color: totalBalance >= 0 ? colors.success : colors.danger }]}>
+                {formatMoney(totalBalance)}
+              </Text>
+              {reportLoading ? <ActivityIndicator size="small" color={colors.textMuted} /> : null}
+            </View>
+            {isFutureMonth ? <Text style={s.heroProjected}>Proyectado con lo que tienes registrado</Text> : null}
+            <View style={s.segTrack}>
+              <View style={{ width: `${(gastosFijos / barBase) * 100}%`, backgroundColor: colors.danger }} />
+              <View style={{ width: `${(gastosCuotas / barBase) * 100}%`, backgroundColor: colors.orange }} />
+              <View style={{ width: `${(gastosPuntuales / barBase) * 100}%`, backgroundColor: '#FCA5A5' }} />
+            </View>
+            <View style={s.heroLegend}>
+              <Text style={s.heroLegendText}>Entró <Text style={s.heroLegendStrong}>{formatMoney(totalIngresos)}</Text></Text>
+              <Text style={s.heroLegendText}>
+                Gastaste <Text style={s.heroLegendStrong}>{formatMoney(totalGastos)}</Text>{totalIngresos > 0 ? ` (${gastoPct}%)` : ''}
+              </Text>
+            </View>
+            <View style={s.heroFooter}>
+              <View style={[s.estadoPill, { backgroundColor: `${estado.color}22` }]}>
+                <Text style={[s.estadoText, { color: estado.color }]}>{estado.text}</Text>
+              </View>
+              <TouchableOpacity onPress={() => setDetalleAbierto((v) => !v)} hitSlop={8} style={s.detalleBtn}>
+                <Text style={s.link}>{detalleAbierto ? 'Ocultar' : 'Ver detalle'}</Text>
+                <Ionicons name={detalleAbierto ? 'chevron-up' : 'chevron-down'} size={14} color={colors.primary} />
               </TouchableOpacity>
             </View>
-            <Text style={s.ahorroHint}>
-              Suma todo lo que tengas ahorrado hoy. Es el punto de partida para que tu
-              proyección y tu colchón arranquen bien.
-            </Text>
           </View>
-        </View>
-      )}
 
-      {/* El dashboard NO encabeza con el saldo de cierre / disponible: un numero
-          grande basado en la proyeccion da una falsa tranquilidad. En su lugar
-          va el score de salud financiera (para quien lo tiene). El saldo del
-          cierre sigue disponible, pero contextualizado dentro de la proyeccion. */}
+          {detalleAbierto ? (
+            <DetailCard
+              tipo={detalleTipo}
+              onTipo={setDetalleTipo}
+              breakdown={detalleTipo === 'income' ? breakdownIncome : breakdownExpense}
+              items={detalleTipo === 'income' ? incomeDetailItems : expenseDetailItems}
+              total={detalleTipo === 'income' ? totalIngresos : totalGastos}
+              mesLabel={selectedMonthLabel.toLowerCase()}
+            />
+          ) : null}
 
-      {reportLoading && !reportSummary ? (
-        <View style={s.summaryLoadingCard}>
-          <ActivityIndicator color={colors.primary} />
-          <Text style={s.summaryLoadingText}>Actualizando el resumen de {selectedMonthLabel.toLowerCase()}...</Text>
-        </View>
-      ) : null}
-
-      {/* Registrar es lo que mas se repite en el dia a dia: desde aqui es un
-          solo toque en vez de entrar a la pestaña y buscar el boton. */}
-      <View style={s.quickRow}>
-        {QUICK_ACTIONS.map((accion) => (
-          <TouchableOpacity
-            key={accion.key}
-            style={s.quickBtn}
-            onPress={() => navigation.navigate(accion.screen, { autoNew: true, tab: accion.tab })}
-          >
-            <Text style={s.quickIcon}>{accion.icon}</Text>
-            <Text style={s.quickLabel}>{accion.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <View style={s.grid}>
-        <StatCard
-          label="Ingresos" value={totalIngresos} color={colors.success} icon="💰"
-          expanded={expandedDetail === 'income'}
-          onPress={() => setExpandedDetail((p) => (p === 'income' ? null : 'income'))}
-        />
-        <StatCard
-          label="Gastos" value={totalGastos} color={colors.danger} icon="💸"
-          expanded={expandedDetail === 'expense'}
-          onPress={() => setExpandedDetail((p) => (p === 'expense' ? null : 'expense'))}
-        />
-      </View>
-
-      {expandedDetail === 'income' ? (
-        <DetailCard
-          title={`Detalle de ingresos · ${selectedMonthLabel}`}
-          total={totalIngresos}
-          items={incomeDetailItems}
-          emptyLabel={`No tienes ingresos guardados en ${selectedMonthLabel.toLowerCase()}.`}
-          accent={colors.success}
-          showAll
-        />
-      ) : null}
-      {expandedDetail === 'expense' ? (
-        <DetailCard
-          title={`Detalle de gastos · ${selectedMonthLabel}`}
-          total={totalGastos}
-          items={expenseDetailItems}
-          emptyLabel={`No tienes gastos guardados en ${selectedMonthLabel.toLowerCase()}.`}
-          accent={colors.danger}
-          showAll
-        />
-      ) : null}
-
-      <View style={s.balanceCard}>
-        <View style={s.balanceRow}>
-          <Text style={s.balanceLabel}>Balance del mes</Text>
-          <Text style={[s.balanceValue, { color: totalBalance >= 0 ? colors.success : colors.danger }]}>
-            {formatMoney(totalBalance)}
-          </Text>
-        </View>
-        {totalIngresos > 0 && (
-          <>
-            <View style={s.progressTrack}>
-              <View
-                style={[
-                  s.progressFill,
-                  { width: `${tasaPct}%`, backgroundColor: tasaPct >= 20 ? colors.success : tasaPct >= 10 ? '#F59E0B' : colors.danger },
-                ]}
-              />
-            </View>
-            <Text style={s.tasaText}>
-              Tasa de ahorro:{' '}
-              <Text style={s.tasaStrong}>{tasaAhorro}%</Text>
-            </Text>
-          </>
-        )}
-      </View>
-
-      {totalIngresos > 0 && (
-        <View style={s.healthCard}>
-          <View style={s.healthHeader}>
-            <Text style={s.healthLabel}>Gastos vs ingresos</Text>
-            <Text style={[s.healthPct, { color: gastoPctColor }]}>{gastoPct}%</Text>
+          {/* Registrar es lo que mas se repite en el dia a dia: desde aqui es un
+              solo toque en vez de entrar a la pestaña y buscar el boton. */}
+          <View style={s.quickRow}>
+            {QUICK_ACTIONS.map((accion) => (
+              <TouchableOpacity
+                key={accion.key}
+                style={s.quickBtn}
+                onPress={() => navigation.navigate(accion.screen, { autoNew: true, tab: accion.tab })}
+              >
+                <Ionicons name={accion.icon} size={20} color={colors.primary} />
+                <Text style={s.quickLabel}>{accion.label}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
-          <View style={s.healthTrack}>
-            <View style={[s.healthFill, { width: `${gastoPct}%`, backgroundColor: gastoPctColor }]} />
-          </View>
-          <Text style={s.healthHint}>
-            {gastoPct >= 90
-              ? 'Atención: casi sin margen'
-              : gastoPct >= 75
-                ? 'Cuidado: margen estrecho'
-                : gastoPct >= 50
-                  ? 'Moderado: todavía hay espacio'
-                  : 'Saludable: buen colchón'}
-          </Text>
-        </View>
-      )}
 
-      <View style={s.section}>
-        <View style={s.sectionHeader}>
-          <Text style={s.sectionTitle}>Desglose del mes</Text>
-          <Text style={s.sectionHint}>{selectedMonthLabel}</Text>
-        </View>
-        {breakdownItems.map((item, index) => (
-          <View key={item.id}>
-            {index === 2 ? <View style={s.breakdownDivider} /> : null}
-            <View style={s.breakdownRow}>
-              <Text style={s.breakdownLabel}>{item.label}</Text>
-              <Text style={[s.breakdownValue, { color: item.color }]}>{formatMoney(item.value)}</Text>
-            </View>
-          </View>
-        ))}
-      </View>
+          {checklist}
 
-      {activeReport?.categorias?.length > 0 && (
-        <View style={s.section}>
-          <View style={s.sectionHeader}>
-            <Text style={s.sectionTitle}>Por categoría</Text>
-            <Text style={s.sectionHint}>{selectedMonthLabel}</Text>
-          </View>
-          {activeReport.categorias.map((cat) => (
-            <View key={cat.categoria} style={s.categoryRow}>
-              <Text style={s.categoryIcon}>{cat.icono || '📦'}</Text>
+          {cuentasPersonas.meDeben > 0 || cuentasPersonas.debo > 0 ? (
+            <TouchableOpacity style={[s.card, s.rowCard]} onPress={() => navigation.navigate('Más', { screen: 'Cobros' })}>
+              <Text style={s.rowIcon}>🐭</Text>
               <View style={{ flex: 1 }}>
-                <Text style={s.categoryName}>{cat.categoria}</Text>
-                {cat.limite != null && (
-                  <Text style={s.categoryLimit}>Límite: {formatMoney(cat.limite)}</Text>
-                )}
-              </View>
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={s.categoryAmount}>{formatMoney(cat.total)}</Text>
-                {cat.pct_limite != null && (
-                  <Text style={[s.categoryPct, { color: cat.pct_limite > 100 ? colors.danger : colors.success }]}>
-                    {cat.pct_limite}%
-                  </Text>
-                )}
-              </View>
-            </View>
-          ))}
-        </View>
-      )}
-
-      {activeReport?.top_gastos?.length > 0 && (
-        <View style={s.section}>
-          <View style={s.sectionHeader}>
-            <Text style={s.sectionTitle}>Gastos puntuales más altos</Text>
-            <Text style={s.sectionHint}>{selectedMonthLabel}</Text>
-          </View>
-          {activeReport.top_gastos.slice(0, 5).map((item, index) => (
-            <View key={`${item.descripcion}-${item.fecha}-${index}`} style={s.topExpenseRow}>
-              <View style={s.topExpenseIndex}>
-                <Text style={s.topExpenseIndexText}>{index + 1}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={s.topExpenseLabel}>{item.descripcion}</Text>
-                <Text style={s.topExpenseMeta}>
-                  {item.categoria} · {formatDate(item.fecha)}
+                <Text style={s.rowTitle}>Cuentas con personas</Text>
+                <Text style={s.rowHint}>
+                  {[
+                    cuentasPersonas.meDeben > 0 ? `Te deben ${formatMoney(cuentasPersonas.meDeben)}` : null,
+                    cuentasPersonas.debo > 0 ? `Debes ${formatMoney(cuentasPersonas.debo)}` : null,
+                  ].filter(Boolean).join(' · ')}
                 </Text>
               </View>
-              <Text style={s.topExpenseAmount}>{formatMoney(item.monto)}</Text>
-            </View>
-          ))}
-        </View>
-      )}
+              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+          ) : null}
 
-      <View style={s.section}>
-        <View style={s.sectionHeader}>
-          <Text style={s.sectionTitle}>Proyección de saldo</Text>
-          <Text style={s.sectionHint}>{advancedProjectionEnabled ? 'Pro' : 'Gratis'}</Text>
-        </View>
-        <Text style={s.projectionCopy}>
-          {projectionWindowCopy}
-        </Text>
-
-        {projection ? (
-          <View style={s.projTiles}>
-            <View style={[s.projTile, s.projTileWide]}>
-              <View style={s.projOutlookRow}>
-                <Text style={[s.projTileLabel, { flex: 1 }]}>Si sigues así, terminarías con</Text>
-                {proyectados.length > 0 && (
-                  <Text style={[s.projOutlookPill, { color: colors.success }]}>{mesesEnPositivo} en positivo</Text>
-                )}
+          {projection && series.length > 1 ? (
+            <TouchableOpacity style={s.card} activeOpacity={0.85} onPress={() => navigation.navigate('Proyeccion')}>
+              <View style={s.cardHeader}>
+                <Text style={s.cardTitle}>Si sigues así</Text>
+                <Text style={s.link}>Ver y simular ›</Text>
               </View>
-              <View style={s.projOutlookRow}>
-                <Text style={[s.projTileVal, { flex: 1, color: projCierre >= 0 ? colors.primary : colors.danger }]}>{formatMoney(projCierre)}</Text>
-                {proyectados.length > 0 && (
-                  <Text style={[s.projOutlookPill, { color: mesesEnRojo.length ? colors.danger : 'rgba(255,255,255,0.38)' }]}>{mesesEnRojo.length} en rojo</Text>
-                )}
+              <View style={s.projRow}>
+                <Text style={[s.projValue, { color: projCierre >= 0 ? colors.primary : colors.danger }]}>{formatMoney(projCierre)}</Text>
+                <Text style={s.projWhen}>al cierre de {projLast?.label}</Text>
               </View>
-              <Text style={s.projTileHint}>Saldo estimado al cierre de {projLast?.label || 'el horizonte'}</Text>
-              {mesesEnRojo.length > 0 && (
+              <Sparkline values={series.map((p) => Number(p.closing_balance ?? 0))} height={44} />
+              {proyectados.length > 0 ? (
+                <Text style={s.projOutlook}>
+                  <Text style={{ color: colors.success, fontWeight: '800' }}>{mesesEnPositivo} {mesesEnPositivo === 1 ? 'mes' : 'meses'} en positivo</Text>
+                  {' · '}
+                  <Text style={{ color: mesesEnRojo.length ? colors.danger : colors.textMuted, fontWeight: '800' }}>{mesesEnRojo.length} en rojo</Text>
+                </Text>
+              ) : null}
+              {mesesEnRojo.length > 0 ? (
                 <>
                   <TouchableOpacity onPress={() => setShowNegDetail((v) => !v)} activeOpacity={0.7}>
                     <Text style={s.projOutlookToggle}>
@@ -878,7 +780,7 @@ export default function DashboardScreen({ navigation }) {
                         : `Ver ${mesesEnRojo.length === 1 ? 'el mes en rojo' : `los ${mesesEnRojo.length} meses en rojo`}`}
                     </Text>
                   </TouchableOpacity>
-                  {showNegDetail && (
+                  {showNegDetail ? (
                     <View style={s.projOutlookList}>
                       {mesesEnRojo.slice(0, 4).map((m) => (
                         <View key={m.month} style={s.projOutlookItem}>
@@ -886,145 +788,240 @@ export default function DashboardScreen({ navigation }) {
                           <Text style={s.projOutlookItemVal}>{formatMoney(Number(m.closing_balance ?? 0))}</Text>
                         </View>
                       ))}
-                      {mesesEnRojo.length > 4 && (
+                      {mesesEnRojo.length > 4 ? (
                         <Text style={s.projOutlookMore}>
                           y {mesesEnRojo.length - 4} {mesesEnRojo.length - 4 === 1 ? 'mes más' : 'meses más'} en rojo
                         </Text>
-                      )}
+                      ) : null}
                     </View>
-                  )}
+                  ) : null}
                 </>
-              )}
-            </View>
-            <View style={s.projTile}>
-              <Text style={s.projTileLabel}>Hoy partes con</Text>
-              <Text style={s.projTileVal}>{formatMoney(Number(projection.starting_balance ?? 0))}</Text>
-              <Text style={s.projTileHint}>Saldo con el que arranca</Text>
-            </View>
-            <View style={s.projTile}>
-              <Text style={s.projTileLabel}>Gastos variables / mes</Text>
-              <Text style={[s.projTileVal, { color: colors.danger }]}>{formatMoney(Number(projection.variable_monthly_estimate ?? 0))}</Text>
-              <Text style={s.projTileHint}>{esModoSimple ? 'Con tus estimados' : 'Promedio de tu historial'}</Text>
-            </View>
-            {advancedProjectionEnabled ? (
-              <View style={[s.projTile, s.projTileWide]}>
-                <Text style={s.projTileLabel}>Cómo calculamos tus variables</Text>
-                <Text style={[s.projTileVal, { color: colors.text }]}>{esModoSimple ? 'Estimado' : 'Con tu historial'}</Text>
-                <Text style={s.projTileHint}>
-                  {esModoSimple
-                    ? 'Usa los montos que registraste'
-                    : `${Number(projection.variable_history_observations ?? 0)} ${Number(projection.variable_history_observations ?? 0) === 1 ? 'registro' : 'registros'} · el último año cuenta más`}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-        ) : null}
-
-        <ProjectionControls
-          mode={projectionMode}
-          onModeChange={cambiarModo}
-          modeSaving={modeSaving}
-          modeLocked={!advancedProjectionEnabled}
-          pastMonths={pastMonths}
-          onPastMonthsChange={setPastMonths}
-          futureMonths={futureMonths}
-          onFutureMonthsChange={setFutureMonths}
-          maxFutureMonths={advancedProjectionMaxMonths}
-          seriesFocus={seriesFocus}
-          onSeriesFocusChange={setSeriesFocus}
-          onRecalcular={recalcularSaldos}
-          recalculando={recalculando}
-          onExpandir={() => setChartExpandido(true)}
-          helpText={getProjectionHelp(
-            projectionMode,
-            Number(projection?.variable_history_months_used ?? 0),
-            Number(projection?.variable_history_observations ?? 0),
-          )}
-        />
-
-        <ProjectionChart
-          data={projection}
-          loading={loading}
-          showHeader={false}
-          advancedProjectionEnabled={advancedProjectionEnabled}
-          seriesFocus={seriesFocus}
-        />
-      </View>
-
-      {/* La grafica en el ancho del telefono queda apretada; en horizontal se
-          lee mucho mejor sin tener que hacer scroll lateral. */}
-      <Modal
-        visible={chartExpandido}
-        animationType="slide"
-        onRequestClose={() => setChartExpandido(false)}
-        supportedOrientations={['portrait', 'landscape']}
-      >
-        <View style={s.modalRoot}>
-          <View style={s.modalHeader}>
-            <Text style={s.modalTitle}>Proyección de saldo</Text>
-            <TouchableOpacity style={s.modalClose} onPress={() => setChartExpandido(false)}>
-              <Text style={s.modalCloseText}>✕</Text>
+              ) : null}
             </TouchableOpacity>
-          </View>
-          <Text style={s.modalHint}>Gira el teléfono para verla más ancha.</Text>
-          <ProjectionChart
-            data={projection}
-            loading={loading}
-            showHeader={false}
-            advancedProjectionEnabled={advancedProjectionEnabled}
-            seriesFocus={seriesFocus}
-          />
-        </View>
-      </Modal>
+          ) : null}
+
+          {activeReport?.categorias?.length > 0 && (
+            <View style={s.card}>
+              <View style={s.cardHeader}>
+                <Text style={s.cardTitle}>Por categoría</Text>
+                <Text style={s.cardHint}>{selectedMonthLabel}</Text>
+              </View>
+              {activeReport.categorias.map((cat) => (
+                <View key={cat.categoria} style={s.categoryRow}>
+                  <Text style={s.categoryIcon}>{cat.icono || '📦'}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.categoryName}>{cat.categoria}</Text>
+                    {cat.limite != null && (
+                      <Text style={s.categoryLimit}>Límite: {formatMoney(cat.limite)}</Text>
+                    )}
+                  </View>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={s.categoryAmount}>{formatMoney(cat.total)}</Text>
+                    {cat.pct_limite != null && (
+                      <Text style={[s.categoryPct, { color: cat.pct_limite > 100 ? colors.danger : colors.success }]}>
+                        {cat.pct_limite}%
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {activeReport?.top_gastos?.length > 0 && (
+            <View style={s.card}>
+              <View style={s.cardHeader}>
+                <Text style={s.cardTitle}>Gastos puntuales más altos</Text>
+                <Text style={s.cardHint}>{selectedMonthLabel}</Text>
+              </View>
+              {activeReport.top_gastos.slice(0, 5).map((item, index) => (
+                <View key={`${item.descripcion}-${item.fecha}-${index}`} style={s.topExpenseRow}>
+                  <View style={s.topExpenseIndex}>
+                    <Text style={s.topExpenseIndexText}>{index + 1}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.topExpenseLabel}>{item.descripcion}</Text>
+                    <Text style={s.topExpenseMeta}>
+                      {item.categoria} · {formatDate(item.fecha)}
+                    </Text>
+                  </View>
+                  <Text style={s.topExpenseAmount}>{formatMoney(item.monto)}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </>
+      )}
     </ScrollView>
   )
 }
 
-function StatCard({ label, value, color, icon, onPress, expanded }) {
-  const Wrapper = onPress ? TouchableOpacity : View
+// Linea del saldo de cierre mes a mes. Si cruza a negativo se marca el cero.
+function Sparkline({ values, height = 44, muted = false }) {
+  const [width, setWidth] = useState(0)
+  const pts = values.length > 1 ? values : [0, 0]
+  const min = Math.min(...pts, 0)
+  const max = Math.max(...pts, 0)
+  const range = max - min || 1
+  const pad = 3
+  const x = (i) => (i / (pts.length - 1)) * width
+  const y = (v) => pad + (1 - (v - min) / range) * (height - pad * 2)
+  const line = pts.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')
+  const area = `${line} L${width},${height} L0,${height} Z`
+  const stroke = muted ? colors.textFaint : colors.primary
   return (
-    <Wrapper style={[s.statCard, { borderColor: `${color}33` }, expanded && { borderColor: color }]} onPress={onPress} activeOpacity={0.8}>
-      <Text style={s.statIcon}>{icon}</Text>
-      <Text style={[s.statValue, { color }]}>{formatMoney(value)}</Text>
-      <Text style={s.statLabel}>{label}</Text>
-      {onPress ? (
-        <Text style={[s.statDetail, { color }]}>{expanded ? 'Ocultar ▲' : 'Ver detalle ▾'}</Text>
+    <View style={{ height, marginTop: 6 }} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+      {width > 0 ? (
+        <Svg width={width} height={height}>
+          {min < 0 ? <Line x1={0} x2={width} y1={y(0)} y2={y(0)} stroke={colors.danger} strokeOpacity={0.5} strokeDasharray="4 3" /> : null}
+          <Path d={area} fill={stroke} fillOpacity={0.14} />
+          <Path d={line} fill="none" stroke={stroke} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        </Svg>
       ) : null}
-    </Wrapper>
+    </View>
   )
 }
 
-function DetailCard({ title, total, items, emptyLabel, accent, showAll }) {
-  const visibles = showAll ? items : items.slice(0, 4)
+function Onboarding({
+  pasos, pasosListos, ahorroInicial, setAhorroInicial, savingAhorro,
+  onGuardarAhorro, onOmitirAhorro, onIngreso, onGasto, onDileAAura,
+}) {
   return (
-    <View style={s.section}>
-      <View style={s.sectionHeader}>
-        <Text style={s.sectionTitle}>{title}</Text>
-        <Text style={[s.sectionTotal, { color: accent }]}>{formatMoney(total)}</Text>
+    <View style={[s.card, s.onbCard]}>
+      <View style={s.cardHeader}>
+        <Text style={s.cardTitle}>Arranquemos</Text>
+        <Text style={s.cardHint}>{pasosListos} de 3 {pasosListos === 1 ? 'listo' : 'listos'}</Text>
+      </View>
+      <View style={s.onbTrack}><View style={[s.onbFill, { width: `${(pasosListos / 3) * 100}%` }]} /></View>
+
+      <Paso n={1} hecho={pasos.ahorro} titulo="¿Con cuánto empiezas?" texto="Lo que tienes hoy en tu cuenta o ahorrado.">
+        <View style={s.onbActions}>
+          <View style={s.ahorroInputWrap}>
+            <Text style={s.ahorroPrefix}>$</Text>
+            <TextInput
+              style={s.ahorroInput}
+              value={ahorroInicial}
+              onChangeText={setAhorroInicial}
+              placeholder="Ej: 500"
+              placeholderTextColor={colors.placeholder}
+              keyboardType="decimal-pad"
+              editable={!savingAhorro}
+            />
+          </View>
+          <TouchableOpacity
+            style={[s.btnPrimary, (!ahorroInicial || savingAhorro) && s.btnOff]}
+            onPress={onGuardarAhorro}
+            disabled={!ahorroInicial || savingAhorro}
+          >
+            {savingAhorro ? <ActivityIndicator color={colors.text} size="small" /> : <Text style={s.btnPrimaryText}>Guardar</Text>}
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity onPress={onOmitirAhorro} hitSlop={6}>
+          <Text style={s.onbSkip}>No tengo ahorros por ahora</Text>
+        </TouchableOpacity>
+      </Paso>
+
+      <Paso n={2} hecho={pasos.ingreso} titulo="Tu ingreso principal" texto="Tu sueldo o lo que te entra cada mes.">
+        <View style={s.onbActions}>
+          <TouchableOpacity style={s.btnPrimary} onPress={onIngreso}>
+            <Text style={s.btnPrimaryText}>Registrar ingreso</Text>
+          </TouchableOpacity>
+        </View>
+      </Paso>
+
+      <Paso n={3} hecho={pasos.gasto} titulo="Tu primer gasto" texto="O díselo a Aura: «gasté 5 en almuerzo».">
+        <View style={s.onbActions}>
+          <TouchableOpacity style={s.btnGhost} onPress={onGasto}>
+            <Text style={s.btnGhostText}>Registrar gasto</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.btnGhost} onPress={onDileAAura}>
+            <Text style={s.btnGhostText}>✦ Dile a Aura</Text>
+          </TouchableOpacity>
+        </View>
+      </Paso>
+    </View>
+  )
+}
+
+function Paso({ n, hecho, titulo, texto, children }) {
+  return (
+    <View style={[s.paso, n > 1 && s.pasoBorde]}>
+      <View style={[s.pasoDot, hecho && s.pasoDotDone]}>
+        {hecho
+          ? <Ionicons name="checkmark" size={13} color="#06231A" />
+          : <Text style={s.pasoNum}>{n}</Text>}
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[s.pasoTitulo, hecho && s.pasoTituloDone]}>{titulo}</Text>
+        {hecho ? null : (
+          <>
+            <Text style={s.pasoTexto}>{texto}</Text>
+            {children}
+          </>
+        )}
+      </View>
+    </View>
+  )
+}
+
+function DetailCard({ tipo, onTipo, breakdown, items, total, mesLabel }) {
+  const accent = tipo === 'income' ? colors.success : colors.danger
+  return (
+    <View style={s.card}>
+      <View style={s.segmented}>
+        {[{ k: 'expense', l: 'Gastos' }, { k: 'income', l: 'Ingresos' }].map((o) => (
+          <TouchableOpacity key={o.k} style={[s.segBtn, tipo === o.k && s.segBtnOn]} onPress={() => onTipo(o.k)}>
+            <Text style={[s.segText, tipo === o.k && s.segTextOn]}>{o.l}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <View style={s.breakdown}>
+        {breakdown.map((b) => (
+          <View key={b.id} style={s.breakdownRow}>
+            <View style={[s.breakdownDot, { backgroundColor: b.color }]} />
+            <Text style={s.breakdownLabel}>{b.label}</Text>
+            <Text style={[s.breakdownValue, { color: b.color }]}>{formatMoney(b.value)}</Text>
+          </View>
+        ))}
+        <View style={[s.breakdownRow, s.breakdownTotal]}>
+          <Text style={[s.breakdownLabel, { color: colors.text, fontWeight: '700' }]}>Total</Text>
+          <Text style={[s.breakdownValue, { color: accent }]}>{formatMoney(total)}</Text>
+        </View>
       </View>
       {items.length === 0 ? (
-        <Text style={s.emptyListText}>{emptyLabel}</Text>
-      ) : (
-        <>
-          {visibles.map((item) => (
-            <View key={item.id} style={s.detailRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={s.detailLabel}>{item.label}</Text>
-                <Text style={s.detailMeta}>{item.meta}</Text>
-                {item.progress != null && (
-                  <View style={s.cuotaTrack}>
-                    <View style={[s.cuotaFill, { width: `${item.progress}%` }]} />
-                  </View>
-                )}
+        <Text style={s.emptyListText}>
+          {tipo === 'income' ? `No tienes ingresos guardados en ${mesLabel}.` : `No tienes gastos guardados en ${mesLabel}.`}
+        </Text>
+      ) : items.map((item) => (
+        <View key={item.id} style={s.detailRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.detailLabel}>{item.label}</Text>
+            <Text style={s.detailMeta}>{item.meta}</Text>
+            {item.progress != null && (
+              <View style={s.cuotaTrack}>
+                <View style={[s.cuotaFill, { width: `${item.progress}%` }]} />
               </View>
-              <Text style={[s.detailAmount, { color: accent }]}>{formatMoney(item.amount)}</Text>
-            </View>
-          ))}
-          {!showAll && items.length > 4 && (
-            <Text style={s.moreText}>y {items.length - 4} más</Text>
-          )}
-        </>
-      )}
+            )}
+          </View>
+          <Text style={[s.detailAmount, { color: accent }]}>{formatMoney(item.amount)}</Text>
+        </View>
+      ))}
+    </View>
+  )
+}
+
+// La primera vez (sin cache) se ve la forma del Dashboard en vez de un spinner
+// a pantalla completa.
+function DashboardSkeleton({ topPad }) {
+  return (
+    <View style={[s.root, s.content, { paddingTop: topPad }]}>
+      <View style={[s.skel, { width: '55%', height: 26 }]} />
+      <View style={[s.skel, { height: 150, borderRadius: 18 }]} />
+      <View style={s.quickRow}>
+        {[0, 1, 2, 3].map((i) => <View key={i} style={[s.skel, { flex: 1, height: 62 }]} />)}
+      </View>
+      <View style={[s.skel, { height: 130 }]} />
+      <View style={[s.skel, { height: 110 }]} />
     </View>
   )
 }
@@ -1032,209 +1029,130 @@ function DetailCard({ title, total, items, emptyLabel, accent, showAll }) {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 16, paddingBottom: 40, gap: 12 },
-  loaderScreen: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 12,
-  },
-  loaderText: { color: 'rgba(255,255,255,0.45)', fontSize: 14 },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   greeting: { color: colors.text, fontSize: 24, fontWeight: '800' },
-  subtitle: { color: 'rgba(255,255,255,0.45)', fontSize: 13, marginTop: 4 },
-  monthSwitcher: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    padding: 10,
-  },
-  monthNavBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-  monthNavBtnDisabled: { opacity: 0.35 },
-  monthNavArrow: { color: colors.primary, fontSize: 24, lineHeight: 26 },
-  monthSwitcherCenter: { flex: 1, alignItems: 'center', gap: 2 },
-  monthSwitcherLabel: { color: colors.text, fontWeight: '700', fontSize: 16 },
-  monthFutureHint: { color: '#FBBF24', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
-  shortcutCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: 'rgba(139,92,246,0.10)',
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(139,92,246,0.25)',
-  },
-  shortcutIcon: { fontSize: 22 },
-  shortcutTitle: { color: colors.text, fontWeight: '700', fontSize: 14 },
-  shortcutHint: { color: 'rgba(255,255,255,0.45)', fontSize: 12, marginTop: 2 },
-  shortcutArrow: { color: 'rgba(196,135,246,0.6)', fontSize: 22 },
+  subtitle: { color: colors.textMuted, fontSize: 13, marginTop: 4 },
+  link: { color: colors.primary, fontSize: 13, fontWeight: '700' },
+
   errorCard: {
-    backgroundColor: 'rgba(248,113,113,0.08)',
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(248,113,113,0.22)',
+    backgroundColor: 'rgba(248,113,113,0.08)', borderRadius: 14, padding: 14,
+    borderWidth: 1, borderColor: 'rgba(248,113,113,0.22)',
   },
   errorTitle: { color: colors.danger, fontSize: 14, fontWeight: '700', marginBottom: 4 },
   errorBody: { color: 'rgba(255,255,255,0.65)', fontSize: 13, lineHeight: 18 },
-  emptyCard: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+
+  card: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)' },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 8 },
+  cardTitle: { color: colors.text, fontWeight: '700', fontSize: 15 },
+  cardHint: { color: colors.textFaint, fontSize: 12 },
+
+  // Héroe
+  hero: {
+    borderRadius: 18, padding: 16, borderWidth: 1,
+    backgroundColor: 'rgba(16,185,129,0.08)', borderColor: 'rgba(16,185,129,0.25)',
   },
-  emptyTitle: { color: colors.text, fontWeight: '700', fontSize: 16, marginBottom: 6 },
-  emptyText: { color: 'rgba(255,255,255,0.5)', fontSize: 13, lineHeight: 18 },
-  ahorroBlock: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.border, gap: 8 },
-  ahorroLabel: { color: colors.text, fontSize: 13, fontWeight: '600' },
-  ahorroRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  ahorroPrefix: { color: colors.textMuted, fontSize: 16, fontWeight: '600' },
-  ahorroInput: { flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 12, paddingVertical: 10, color: colors.text, fontSize: 15 },
-  ahorroBtn: { backgroundColor: '#16C79A', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 11, minWidth: 92, alignItems: 'center' },
-  ahorroBtnOff: { opacity: 0.4 },
-  ahorroBtnText: { color: '#07131F', fontSize: 14, fontWeight: '800' },
-  ahorroHint: { color: colors.textFaint, fontSize: 11, lineHeight: 15 },
-  summaryLoadingCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-  },
-  summaryLoadingText: { color: 'rgba(255,255,255,0.48)', fontSize: 12, flex: 1 },
-  grid: { flexDirection: 'row', gap: 12 },
-  quickRow: { flexDirection: 'row', gap: 8 },
-  quickBtn: { flex: 1, backgroundColor: colors.surface, borderRadius: 14, paddingVertical: 12, alignItems: 'center', gap: 4, borderWidth: 1, borderColor: colors.border },
-  quickIcon: { fontSize: 20 },
-  quickLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '600' },
-  statCard: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 14,
-  },
-  statIcon: { fontSize: 20, marginBottom: 6 },
-  statValue: { fontSize: 18, fontWeight: '800', marginBottom: 4 },
-  statLabel: { color: 'rgba(255,255,255,0.42)', fontSize: 12 },
-  statDetail: { fontSize: 11, fontWeight: '700', marginTop: 6, opacity: 0.85 },
-  balanceCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  balanceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  balanceLabel: { color: 'rgba(255,255,255,0.55)', fontSize: 14 },
-  balanceValue: { fontSize: 22, fontWeight: '800' },
-  progressTrack: {
-    height: 6,
-    backgroundColor: colors.border,
-    borderRadius: 999,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressFill: { height: '100%', borderRadius: 999 },
-  tasaText: { color: 'rgba(255,255,255,0.42)', fontSize: 12 },
-  tasaStrong: { color: colors.text, fontWeight: '700' },
-  healthCard: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-  },
-  healthHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  healthLabel: { color: 'rgba(255,255,255,0.55)', fontSize: 13 },
-  healthPct: { fontWeight: '800', fontSize: 14 },
-  healthTrack: {
-    height: 8,
-    backgroundColor: colors.border,
-    borderRadius: 999,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  healthFill: { height: '100%', borderRadius: 999 },
-  healthHint: { color: 'rgba(255,255,255,0.45)', fontSize: 12 },
-  breakdownDivider: {
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    marginVertical: 10,
-  },
-  breakdownRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 12,
-  },
-  breakdownLabel: { color: 'rgba(255,255,255,0.55)', fontSize: 13 },
+  heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  heroLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: '600', flexShrink: 1 },
+  monthNav: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  monthBtn: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.06)' },
+  monthBtnOff: { opacity: 0.3 },
+  monthText: { color: colors.text, fontSize: 13, fontWeight: '700', minWidth: 50, textAlign: 'center', textTransform: 'capitalize' },
+  heroValueRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
+  heroValue: { fontSize: 36, fontWeight: '800', letterSpacing: -0.5, fontVariant: ['tabular-nums'] },
+  heroProjected: { color: colors.warning, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
+  segTrack: { flexDirection: 'row', height: 8, borderRadius: 999, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.08)', marginTop: 12, marginBottom: 8 },
+  heroLegend: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' },
+  heroLegendText: { color: colors.textMuted, fontSize: 12 },
+  heroLegendStrong: { color: colors.text, fontWeight: '700' },
+  heroFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, gap: 8 },
+  estadoPill: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5, flexShrink: 1 },
+  estadoText: { fontSize: 12, fontWeight: '700' },
+  detalleBtn: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+
+  // Detalle
+  segmented: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: 3, marginBottom: 12 },
+  segBtn: { flex: 1, paddingVertical: 7, borderRadius: 8, alignItems: 'center' },
+  segBtnOn: { backgroundColor: 'rgba(196,135,246,0.18)' },
+  segText: { color: colors.textMuted, fontSize: 13, fontWeight: '700' },
+  segTextOn: { color: colors.primary },
+  breakdown: { gap: 6, marginBottom: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
+  breakdownRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  breakdownDot: { width: 8, height: 8, borderRadius: 4 },
+  breakdownLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 13, flex: 1 },
   breakdownValue: { fontSize: 13, fontWeight: '700' },
-  section: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-  },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { color: colors.text, fontWeight: '700', fontSize: 15 },
-  modalRoot: { flex: 1, backgroundColor: colors.bg, paddingTop: 48, paddingHorizontal: 12 },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 },
-  modalTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
-  modalClose: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' },
-  modalCloseText: { color: colors.text, fontSize: 15 },
-  modalHint: { color: colors.textMuted, fontSize: 11, paddingHorizontal: 4, marginTop: 2, marginBottom: 10 },
-  sectionHint: { color: colors.textFaint, fontSize: 11 },
-  sectionTotal: { fontSize: 14, fontWeight: '800' },
-  projectionCopy: { color: 'rgba(255,255,255,0.45)', fontSize: 12, marginBottom: 12 },
-  projTiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
-  projTile: {
-    flexGrow: 1, flexBasis: '47%', minWidth: 130,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1, borderColor: colors.border,
-    borderRadius: 12, padding: 12,
-  },
-  projTileWide: { flexBasis: '100%' },
-  projTileLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.3 },
-  projTileVal: { color: colors.text, fontSize: 18, fontWeight: '800', marginTop: 3 },
-  projTileHint: { color: colors.textMuted, fontSize: 11, marginTop: 3, lineHeight: 15 },
-  projOutlookRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-  projOutlookPill: { fontSize: 12, fontWeight: '800' },
-  projOutlookToggle: { color: colors.danger, fontSize: 12, fontWeight: '700', textDecorationLine: 'underline', marginTop: 8 },
-  projOutlookList: { marginTop: 8, gap: 4 },
-  projOutlookItem: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 8,
-    paddingVertical: 4, paddingHorizontal: 9,
-  },
-  projOutlookItemLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 12 },
-  projOutlookItemVal: { color: colors.danger, fontSize: 12, fontWeight: '800' },
-  projOutlookMore: { color: 'rgba(255,255,255,0.4)', fontSize: 12, textAlign: 'center', marginTop: 2 },
+  breakdownTotal: { marginTop: 4 },
   detailRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 10 },
   detailLabel: { color: colors.text, fontSize: 13, fontWeight: '600' },
   detailMeta: { color: 'rgba(255,255,255,0.38)', fontSize: 11, marginTop: 2 },
   cuotaTrack: { marginTop: 6, height: 5, maxWidth: 190, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.10)', overflow: 'hidden' },
   cuotaFill: { height: '100%', borderRadius: 999, backgroundColor: colors.primary },
   detailAmount: { fontSize: 13, fontWeight: '700' },
-  moreText: { color: colors.textFaint, fontSize: 12, marginTop: 2 },
   emptyListText: { color: colors.textMuted, fontSize: 13, lineHeight: 18 },
+
+  // Accesos rápidos
+  quickRow: { flexDirection: 'row', gap: 8 },
+  quickBtn: {
+    flex: 1, backgroundColor: colors.surface, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 4,
+    alignItems: 'center', gap: 6, borderWidth: 1, borderColor: colors.border,
+  },
+  quickLabel: { color: 'rgba(255,255,255,0.78)', fontSize: 11, fontWeight: '600', textAlign: 'center' },
+
+  // Cuentas con personas
+  rowCard: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
+  rowIcon: { fontSize: 22 },
+  rowTitle: { color: colors.text, fontWeight: '700', fontSize: 14 },
+  rowHint: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+
+  // Proyección compacta
+  projRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' },
+  projValue: { fontSize: 22, fontWeight: '800' },
+  projWhen: { color: colors.textMuted, fontSize: 12 },
+  projOutlook: { color: colors.textMuted, fontSize: 12, marginTop: 8 },
+  projOutlookToggle: { color: colors.danger, fontSize: 12, fontWeight: '700', textDecorationLine: 'underline', marginTop: 8 },
+  projOutlookList: { marginTop: 8, gap: 4 },
+  projOutlookItem: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 8, paddingVertical: 4, paddingHorizontal: 9,
+  },
+  projOutlookItemLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 12 },
+  projOutlookItemVal: { color: colors.danger, fontSize: 12, fontWeight: '800' },
+  projOutlookMore: { color: 'rgba(255,255,255,0.4)', fontSize: 12, textAlign: 'center', marginTop: 2 },
+
+  // Cuenta nueva
+  onbCard: { borderColor: 'rgba(16,185,129,0.28)' },
+  onbTrack: { height: 5, borderRadius: 999, backgroundColor: colors.border, overflow: 'hidden', marginBottom: 4 },
+  onbFill: { height: '100%', backgroundColor: colors.success, borderRadius: 999 },
+  paso: { flexDirection: 'row', gap: 12, paddingVertical: 12 },
+  pasoBorde: { borderTopWidth: 1, borderTopColor: colors.border },
+  pasoDot: {
+    width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.25)',
+    alignItems: 'center', justifyContent: 'center', marginTop: 1,
+  },
+  pasoDotDone: { backgroundColor: colors.success, borderColor: colors.success },
+  pasoNum: { color: colors.text, fontSize: 12, fontWeight: '800' },
+  pasoTitulo: { color: colors.text, fontSize: 14, fontWeight: '700' },
+  pasoTituloDone: { color: colors.textMuted, textDecorationLine: 'line-through' },
+  pasoTexto: { color: colors.textMuted, fontSize: 12, marginTop: 2, lineHeight: 17 },
+  onbActions: { flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' },
+  onbSkip: { color: colors.textMuted, fontSize: 12, textDecorationLine: 'underline', marginTop: 8 },
+  ahorroInputWrap: {
+    flex: 1, minWidth: 120, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.inputBg,
+    borderRadius: 10, borderWidth: 1, borderColor: colors.inputBorder, paddingHorizontal: 10,
+  },
+  ahorroPrefix: { color: colors.textMuted, fontSize: 15, fontWeight: '600', marginRight: 4 },
+  ahorroInput: { flex: 1, paddingVertical: 10, color: colors.text, fontSize: 15 },
+  btnPrimary: { backgroundColor: colors.primaryStrong, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 11, alignItems: 'center', justifyContent: 'center', minWidth: 92 },
+  btnPrimaryText: { color: colors.text, fontSize: 14, fontWeight: '800' },
+  btnOff: { opacity: 0.4 },
+  btnGhost: { borderWidth: 1, borderColor: 'rgba(196,135,246,0.35)', backgroundColor: 'rgba(196,135,246,0.08)', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10 },
+  btnGhostText: { color: colors.primary, fontSize: 13, fontWeight: '700' },
+  lockCard: { overflow: 'hidden' },
+  lockVeil: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
+  lockText: { color: colors.textMuted, fontSize: 12, flex: 1 },
+  importLink: { alignItems: 'center', paddingVertical: 6 },
+  importText: { color: colors.textMuted, fontSize: 13 },
+
+  // Categorías y top gastos
   categoryRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 12 },
   categoryIcon: { fontSize: 17, width: 24 },
   categoryName: { color: colors.text, fontSize: 13, fontWeight: '600', textTransform: 'capitalize' },
@@ -1242,16 +1160,11 @@ const s = StyleSheet.create({
   categoryAmount: { color: colors.text, fontWeight: '700', fontSize: 13 },
   categoryPct: { fontSize: 11, fontWeight: '700', marginTop: 2 },
   topExpenseRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
-  topExpenseIndex: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: 'rgba(248,113,113,0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  topExpenseIndex: { width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(248,113,113,0.15)', justifyContent: 'center', alignItems: 'center' },
   topExpenseIndexText: { color: colors.danger, fontWeight: '800', fontSize: 11 },
   topExpenseLabel: { color: colors.text, fontWeight: '600', fontSize: 13 },
   topExpenseMeta: { color: 'rgba(255,255,255,0.38)', fontSize: 11, marginTop: 2 },
   topExpenseAmount: { color: colors.danger, fontWeight: '700', fontSize: 13 },
+
+  skel: { backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 14 },
 })

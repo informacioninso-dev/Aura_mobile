@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { ActivityIndicator, Text, View, TouchableOpacity, StyleSheet, ScrollView, Platform, Linking } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import { useAuth } from '../context/AuthContext'
 
 import LoginScreen from '../screens/auth/LoginScreen'
@@ -18,7 +18,7 @@ import AsistenteScreen from '../screens/asistente/AsistenteScreen'
 import PresupuestoScreen from '../screens/presupuesto/PresupuestoScreen'
 import SaludFinancieraScreen from '../screens/salud/SaludFinancieraScreen'
 import CobrosScreen from '../screens/cobros/CobrosScreen'
-import SimuladorScreen from '../screens/simulador/SimuladorScreen'
+import ProyeccionScreen from '../screens/proyeccion/ProyeccionScreen'
 import PerfilScreen from '../screens/perfil/PerfilScreen'
 import ImportarScreen from '../screens/importar/ImportarScreen'
 import ReportesScreen from '../screens/reportes/ReportesScreen'
@@ -147,7 +147,7 @@ function MasNavigator() {
       <MasStack.Screen name="SaludFinanciera" component={SaludFinancieraScreen} />
       <MasStack.Screen name="Cobros" component={CobrosScreen} />
       <MasStack.Screen name="Presupuesto" component={PresupuestoScreen} />
-      <MasStack.Screen name="Simulador" component={SimuladorScreen} />
+      <MasStack.Screen name="Simulador" component={ProyeccionScreen} initialParams={{ simular: true }} />
       <MasStack.Screen name="Diferidos" component={DeferidosScreen} />
       <MasStack.Screen name="Importar" component={ImportarScreen} />
       <MasStack.Screen name="Reportes" component={ReportesScreen} />
@@ -240,7 +240,10 @@ export default function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          <Stack.Screen name="Main" component={MainTabs} />
+          <>
+            <Stack.Screen name="Main" component={MainTabs} />
+            <Stack.Screen name="Proyeccion" component={ProyeccionScreen} />
+          </>
         ) : (
           <Stack.Group>
             <Stack.Screen name="Login" component={LoginScreen} />
