@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { ActivityIndicator, Text, View, TouchableOpacity, StyleSheet, ScrollView, Platform, Linking } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '../context/AuthContext'
 
 import LoginScreen from '../screens/auth/LoginScreen'
@@ -51,7 +52,7 @@ const MAS_SECCIONES = [
       { icon: '🛡️', label: 'Salud financiera', hint: 'Tu puntaje 0-100', screen: 'SaludFinanciera' },
       { icon: '🎯', label: 'Presupuesto', hint: 'Límites por categoría', screen: 'Presupuesto' },
       { icon: '🧩', label: 'Gastos a cuotas', hint: 'Compras a cuotas', screen: 'Diferidos' },
-      { icon: '💳', label: 'Cuentas con personas', hint: 'Te deben / debes', screen: 'Cobros' },
+      { icon: '🐭', label: 'Cuentas con personas', hint: 'Te deben / debes', screen: 'Cobros' },
     ],
   },
   {
@@ -180,9 +181,14 @@ const fab = StyleSheet.create({
   icon: { fontSize: 22, color: colors.text },
 })
 
-function TabIcon({ name, focused }) {
-  const icons = { Dashboard: '📊', Ingresos: '💰', Gastos: '💸', Más: '☰' }
-  return <Text style={{ fontSize: focused ? 20 : 17 }}>{icons[name]}</Text>
+// Íconos vectoriales: los emoji no toman el color activo de la barra (la
+// pestaña activa solo crecía 3 px) y cada fabricante de Android los dibuja
+// distinto. Relleno = activa, contorno = inactiva.
+const TAB_ICONS = { Dashboard: 'home', Ingresos: 'cash', Gastos: 'cart', Más: 'grid' }
+
+function TabIcon({ name, focused, color }) {
+  const base = TAB_ICONS[name]
+  return <Ionicons name={focused ? base : `${base}-outline`} size={22} color={color} />
 }
 
 function MainTabs() {
@@ -199,7 +205,7 @@ function MainTabs() {
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarIcon: ({ focused }) => <TabIcon name={route.name} focused={focused} />,
+        tabBarIcon: ({ focused, color }) => <TabIcon name={route.name} focused={focused} color={color} />,
         tabBarLabelStyle: { fontSize: 10.5, fontWeight: '600', marginTop: 2 },
         tabBarItemStyle: { paddingVertical: 4 },
       })}

@@ -13,9 +13,12 @@ import {
 
 import { getApiErrorMessage } from '../../api/errors'
 import { useAuth } from '../../context/AuthContext'
+import { colors } from '../../theme/theme'
 import s from './authStyles'
+import { AuthBrand, PasswordInput } from './AuthParts'
 
 const CURRENCIES = ['USD', 'COP', 'EUR', 'CLP', 'PEN', 'MXN', 'ARS']
+const CURRENCY_NAMES = { USD: 'dólar', COP: 'peso colombiano', EUR: 'euro', CLP: 'peso chileno', PEN: 'sol', MXN: 'peso mexicano', ARS: 'peso argentino' }
 const PRIVACY_URL = 'https://aura.binnso.com/privacidad'
 const TERMS_URL = 'https://aura.binnso.com/terminos'
 
@@ -36,12 +39,13 @@ export default function RegistroScreen({ navigation }) {
     email: '',
     username: '',
     password: '',
-    confirmPassword: '',
     moneda_preferida: 'USD',
     privacy_notice_acknowledged: false,
     terms_accepted: false,
   })
   const [loading, setLoading] = useState(false)
+  // Casi todo el público usa dólar: la lista de monedas solo se abre si la piden.
+  const [showCurrencies, setShowCurrencies] = useState(false)
   const [error, setError] = useState('')
 
   function update(patch) {
@@ -52,7 +56,6 @@ export default function RegistroScreen({ navigation }) {
   async function submit() {
     if (!form.email.trim() || !form.username.trim()) return setError('Completa tu correo y nombre.')
     if (form.password.length < 8) return setError('La contraseña debe tener al menos 8 caracteres.')
-    if (form.password !== form.confirmPassword) return setError('Las contraseñas no coinciden.')
     if (!form.privacy_notice_acknowledged || !form.terms_accepted) {
       return setError('Para seguir, acepta el Aviso de Privacidad y los Términos de Uso.')
     }
@@ -78,49 +81,45 @@ export default function RegistroScreen({ navigation }) {
   return (
     <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <View style={s.brand}>
-          <View style={s.mark}><Text style={s.markText}>A</Text></View>
-          <Text style={s.brandName}>AURA</Text>
-          <Text style={s.brandTag}>Tu plata clara, hoy y en los próximos meses.</Text>
-        </View>
-
         <View style={s.card}>
-          <Text style={s.title}>Crea tu cuenta gratis</Text>
-          <Text style={s.subtitle}>Empieza con una visión clara de lo que ganas, gastas y puedes decidir.</Text>
+          <AuthBrand title="Crea tu cuenta gratis" subtitle="Mira cuánto te queda este mes y cómo vas a terminar el año." />
 
           {error ? <Text style={s.error}>{error}</Text> : null}
 
           <View style={s.field}>
             <Text style={s.label}>Correo electrónico</Text>
-            <TextInput style={s.input} value={form.email} onChangeText={(email) => update({ email })} placeholder="tu@correo.com" placeholderTextColor="rgba(255,255,255,0.28)" keyboardType="email-address" autoCapitalize="none" autoComplete="email" />
+            <TextInput style={s.input} value={form.email} onChangeText={(email) => update({ email })} placeholder="tu@correo.com" placeholderTextColor={colors.placeholder} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" textContentType="emailAddress" />
           </View>
           <View style={s.field}>
             <Text style={s.label}>Tu nombre</Text>
-            <TextInput style={s.input} value={form.username} onChangeText={(username) => update({ username })} placeholder="¿Cómo quieres que te llamemos?" placeholderTextColor="rgba(255,255,255,0.28)" autoCapitalize="words" />
+            <TextInput style={s.input} value={form.username} onChangeText={(username) => update({ username })} placeholder="¿Cómo quieres que te llamemos?" placeholderTextColor={colors.placeholder} autoCapitalize="words" autoComplete="name" textContentType="givenName" />
           </View>
           <View style={s.field}>
             <Text style={s.label}>Contraseña</Text>
-            <TextInput style={s.input} value={form.password} onChangeText={(password) => update({ password })} placeholder="Mínimo 8 caracteres" placeholderTextColor="rgba(255,255,255,0.28)" secureTextEntry autoComplete="new-password" />
-          </View>
-          <View style={s.field}>
-            <Text style={s.label}>Confirma tu contraseña</Text>
-            <TextInput style={s.input} value={form.confirmPassword} onChangeText={(confirmPassword) => update({ confirmPassword })} placeholder="Repítela" placeholderTextColor="rgba(255,255,255,0.28)" secureTextEntry autoComplete="new-password" />
+            <PasswordInput value={form.password} onChangeText={(password) => update({ password })} placeholder="Mínimo 8 caracteres" autoComplete="new-password" />
           </View>
 
-          <View style={s.field}>
-            <Text style={s.label}>Moneda principal</Text>
+          <View style={s.inlineRow}>
+            <Text style={s.inlineLabel}>
+              Moneda: <Text style={s.inlineStrong}>{form.moneda_preferida} ({CURRENCY_NAMES[form.moneda_preferida]})</Text>
+            </Text>
+            <Text style={s.inlineLink} onPress={() => setShowCurrencies((v) => !v)}>{showCurrencies ? 'Listo' : 'Cambiar'}</Text>
+          </View>
+          {showCurrencies ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
               {CURRENCIES.map((currency) => {
                 const active = form.moneda_preferida === currency
                 return (
-                  <TouchableOpacity key={currency} style={[s.chip, active && s.chipActive]} onPress={() => update({ moneda_preferida: currency })}>
+                  <TouchableOpacity key={currency} style={[s.chip, active && s.chipActive]} onPress={() => { update({ moneda_preferida: currency }); setShowCurrencies(false) }}>
                     <Text style={[s.chipText, active && s.chipTextActive]}>{currency}</Text>
                   </TouchableOpacity>
                 )
               })}
             </ScrollView>
-          </View>
+          ) : null}
 
+          {/* Dos casillas separadas a proposito: el consentimiento sobre datos
+              personales tiene que ser especifico, no ir mezclado con los terminos. */}
           <CheckRow checked={form.privacy_notice_acknowledged} onChange={(value) => update({ privacy_notice_acknowledged: value })}>
             He leído el <Text style={s.legalLink} onPress={() => Linking.openURL(PRIVACY_URL)}>Aviso de Privacidad</Text> y entiendo cómo Aura tratará mis datos.
           </CheckRow>
@@ -128,13 +127,10 @@ export default function RegistroScreen({ navigation }) {
             Acepto los <Text style={s.legalLink} onPress={() => Linking.openURL(TERMS_URL)}>Términos de Uso</Text> y el descargo financiero.
           </CheckRow>
 
-          <View style={s.notice}>
-            <Text style={s.noticeText}>Aura es una herramienta informativa y no reemplaza asesoría financiera profesional. Sus resultados dependen de que registres tus datos correctamente.</Text>
-          </View>
-
           <TouchableOpacity style={[s.primary, loading && s.disabled]} onPress={submit} disabled={loading}>
-            {loading ? <ActivityIndicator color="#07131F" /> : <Text style={s.primaryText}>Crear mi cuenta gratis</Text>}
+            {loading ? <ActivityIndicator color={colors.text} /> : <Text style={s.primaryText}>Crear mi cuenta</Text>}
           </TouchableOpacity>
+          <Text style={s.fineprint}>Aura es una herramienta informativa y no reemplaza asesoría financiera profesional.</Text>
         </View>
 
         <View style={s.footer}>

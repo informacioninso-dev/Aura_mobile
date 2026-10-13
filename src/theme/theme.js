@@ -15,6 +15,14 @@ export const colors = {
 
   surface: 'rgba(255,255,255,0.05)',
   border: 'rgba(255,255,255,0.08)',
+  // Campos de formulario.
+  inputBg: 'rgba(255,255,255,0.06)',
+  inputBorder: 'rgba(255,255,255,0.12)',
+  placeholder: 'rgba(255,255,255,0.35)',
+  // Placa clara del logo: su barra azul marino se pierde sobre el fondo oscuro.
+  logoPlate: '#FFFFFF',
+  warning: '#FBBF24',
+  orange: '#FB923C',
   // Bordes semánticos: el color indica de qué es la tarjeta.
   borderIncome: 'rgba(16,185,129,0.2)',
   borderExpense: 'rgba(248,113,113,0.2)',

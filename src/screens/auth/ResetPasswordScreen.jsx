@@ -12,7 +12,9 @@ import {
 
 import { getApiErrorMessage } from '../../api/errors'
 import { useAuth } from '../../context/AuthContext'
+import { colors } from '../../theme/theme'
 import s from './authStyles'
+import { AuthBrand } from './AuthParts'
 
 export default function ResetPasswordScreen({ navigation, route }) {
   const { resetPassword } = useAuth()
@@ -60,19 +62,13 @@ export default function ResetPasswordScreen({ navigation, route }) {
   return (
     <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-        <View style={s.brand}>
-          <View style={s.mark}><Text style={s.markText}>A</Text></View>
-          <Text style={s.brandName}>AURA</Text>
-          <Text style={s.brandTag}>Crea una contraseña nueva.</Text>
-        </View>
-
         <View style={s.card}>
-          <Text style={s.title}>Nueva contraseña</Text>
-          <Text style={s.subtitle}>
-            {desdeEnlace
+          <AuthBrand
+            title="Nueva contraseña"
+            subtitle={desdeEnlace
               ? 'Escribe la contraseña con la que vas a entrar de ahora en adelante.'
               : 'Pega el código que aparece en el enlace del correo y elige tu nueva contraseña.'}
-          </Text>
+          />
 
           {error ? <Text style={s.error}>{error}</Text> : null}
           {success ? <Text style={s.success}>{success}</Text> : null}
@@ -86,7 +82,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
                   value={uid}
                   onChangeText={(value) => { setUid(value); setError('') }}
                   placeholder="Del enlace del correo"
-                  placeholderTextColor="rgba(255,255,255,0.28)"
+                  placeholderTextColor={colors.placeholder}
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
@@ -98,7 +94,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
                   value={token}
                   onChangeText={(value) => { setToken(value); setError('') }}
                   placeholder="Del enlace del correo"
-                  placeholderTextColor="rgba(255,255,255,0.28)"
+                  placeholderTextColor={colors.placeholder}
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
@@ -113,7 +109,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
               value={password}
               onChangeText={(value) => { setPassword(value); setError('') }}
               placeholder="Mínimo 8 caracteres"
-              placeholderTextColor="rgba(255,255,255,0.28)"
+              placeholderTextColor={colors.placeholder}
               secureTextEntry
               autoCapitalize="none"
             />
@@ -126,7 +122,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
               value={confirmPassword}
               onChangeText={(value) => { setConfirmPassword(value); setError('') }}
               placeholder="Vuelve a escribirla"
-              placeholderTextColor="rgba(255,255,255,0.28)"
+              placeholderTextColor={colors.placeholder}
               secureTextEntry
               autoCapitalize="none"
               onSubmitEditing={submit}
@@ -140,7 +136,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
           ) : (
             <TouchableOpacity style={[s.primary, loading && s.disabled]} onPress={submit} disabled={loading}>
               {loading
-                ? <ActivityIndicator color="#07131F" />
+                ? <ActivityIndicator color={colors.text} />
                 : <Text style={s.primaryText}>Cambiar contraseña</Text>}
             </TouchableOpacity>
           )}

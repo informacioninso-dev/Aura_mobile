@@ -12,7 +12,9 @@ import {
 
 import { getApiErrorMessage } from '../../api/errors'
 import { useAuth } from '../../context/AuthContext'
+import { colors } from '../../theme/theme'
 import s from './authStyles'
+import { AuthBrand } from './AuthParts'
 
 export default function ForgotPasswordScreen({ navigation }) {
   const { forgotPassword } = useAuth()
@@ -39,23 +41,16 @@ export default function ForgotPasswordScreen({ navigation }) {
   return (
     <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-        <View style={s.brand}>
-          <View style={s.mark}><Text style={s.markText}>A</Text></View>
-          <Text style={s.brandName}>AURA</Text>
-          <Text style={s.brandTag}>Recupera tu acceso de forma segura.</Text>
-        </View>
-
         <View style={s.card}>
-          <Text style={s.title}>Recuperar contraseña</Text>
-          <Text style={s.subtitle}>Te enviaremos un enlace para crear una contraseña nueva.</Text>
+          <AuthBrand title="Recuperar contraseña" subtitle="Te enviaremos un enlace para crear una contraseña nueva." />
           {error ? <Text style={s.error}>{error}</Text> : null}
           {success ? <Text style={s.success}>{success}</Text> : null}
           <View style={s.field}>
             <Text style={s.label}>Correo electrónico</Text>
-            <TextInput style={s.input} value={email} onChangeText={(value) => { setEmail(value); setError(''); setSuccess('') }} placeholder="tu@correo.com" placeholderTextColor="rgba(255,255,255,0.28)" keyboardType="email-address" autoCapitalize="none" autoComplete="email" onSubmitEditing={submit} />
+            <TextInput style={s.input} value={email} onChangeText={(value) => { setEmail(value); setError(''); setSuccess('') }} placeholder="tu@correo.com" placeholderTextColor={colors.placeholder} keyboardType="email-address" autoCapitalize="none" autoComplete="email" onSubmitEditing={submit} />
           </View>
           <TouchableOpacity style={[s.primary, loading && s.disabled]} onPress={submit} disabled={loading}>
-            {loading ? <ActivityIndicator color="#07131F" /> : <Text style={s.primaryText}>Enviar instrucciones</Text>}
+            {loading ? <ActivityIndicator color={colors.text} /> : <Text style={s.primaryText}>Enviar instrucciones</Text>}
           </TouchableOpacity>
         </View>
 
