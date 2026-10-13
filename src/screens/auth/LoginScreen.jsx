@@ -70,7 +70,7 @@ export default function LoginScreen({ navigation }) {
       await login(email.trim().toLowerCase(), password)
       await registrarNotificaciones()
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Email o contraseña incorrectos.'))
+      setError(getApiErrorMessage(e, 'Correo o contraseña incorrectos.'))
     } finally { setLoading(false) }
   }
 
@@ -83,7 +83,7 @@ export default function LoginScreen({ navigation }) {
           </View>
           <Text style={s.logo}>AURA</Text>
         </View>
-        <Text style={s.subtitle}>Tu asistente financiero</Text>
+        <Text style={s.subtitle}>Tu plata clara, hoy y en los próximos meses.</Text>
 
         {error ? <Text style={s.error}>{error}</Text> : null}
 
@@ -124,10 +124,10 @@ export default function LoginScreen({ navigation }) {
         )}
 
         <TouchableOpacity style={s.linkButton} onPress={() => navigation.navigate('ForgotPassword')}>
-          <Text style={s.linkText}>Olvide mi contraseña</Text>
+          <Text style={s.linkText}>Olvidé mi contraseña</Text>
         </TouchableOpacity>
         <View style={s.registerRow}>
-          <Text style={s.registerCopy}>¿Aun no tienes cuenta? </Text>
+          <Text style={s.registerCopy}>¿Aún no tienes cuenta? </Text>
           <Text style={s.registerLink} onPress={() => navigation.navigate('Registro')}>Crear cuenta gratis</Text>
         </View>
       </View>

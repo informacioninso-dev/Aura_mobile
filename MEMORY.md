@@ -34,5 +34,8 @@ Expo y React Native cambian **mucho** entre versiones; romper la matriz de compa
 - **Hecho**: pulido UX (tokens, `ScreenHeader`, safe-area). Outlook de proyección en el Dashboard (meses en positivo/rojo). Navegador de mes + chip `vN` en Gastos fijos.
 - **Pendiente (paridad con web)**: pantalla "Categorías"; simulador "Agregar a mis gastos" por tipo; asistente **multi-movimiento** (hoy consume objeto plano = un solo movimiento); fuente de marca **Plus Jakarta Sans** (la web ya la tiene self-hosted). El **versionado** de gastos NO existe en móvil (es solo web).
 
+- **Copy (Ecuador)**: mismas reglas que la web — tuteo (nunca voseo), "registrar" (no "cargar"), "contraseña" (no "clave"), plan "Gratis" (no "Free"), errores "No pudimos … Intenta de nuevo.", sin "correctamente", "gastos a cuotas" (no "diferidos") en textos visibles. El asistente se llama **"Dile a Aura"**. Al cambiar un texto en la web, replicarlo aquí (y viceversa).
+
 ## 7. Novedades (changelog — agregar arriba)
+- **2026-10-13** — Copy alineado con la web: ortografía, asistente "Dile a Aura" (+ accessibilityLabel en el botón central), estados vacíos por pestaña, textos de proyección sin jerga ("Meses atrás/adelante", "Con tu historial"). Pendiente: `Aura v1.0` hardcodeado en Perfil (la app es 1.4.0).
 - **2026-10** — Navegador de mes + chip de versión en Gastos fijos. Outlook de proyección en el Dashboard.

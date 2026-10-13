@@ -92,7 +92,7 @@ export default function AsistenteScreen() {
       await rec.startAsync()
       recordingRef.current = rec
       setGrabando(true)
-    } catch (e) { setError('No se pudo iniciar la grabación.') }
+    } catch (e) { setError('No pudimos iniciar la grabación. Intenta de nuevo.') }
   }
 
   async function detenerGrabacion() {
@@ -112,8 +112,8 @@ export default function AsistenteScreen() {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       if (data.texto) setTexto(data.texto)
-      else setError('No se pudo transcribir el audio.')
-    } catch (e) { setError(getApiErrorMessage(e, 'Error al transcribir.')) }
+      else setError('No pudimos transcribir el audio. Intenta de nuevo.')
+    } catch (e) { setError(getApiErrorMessage(e, 'No pudimos transcribir el audio. Intenta de nuevo.')) }
     finally { setTranscribiendo(false) }
   }
 
@@ -123,7 +123,7 @@ export default function AsistenteScreen() {
     try {
       const { data } = await api.post('/finanzas/asistente/parsear/', { texto })
       setParsed(data); setEdits({})
-    } catch (e) { setError(getApiErrorMessage(e, 'No pude entender. Intenta ser más específico.')) }
+    } catch (e) { setError(getApiErrorMessage(e, 'No te entendí bien. Prueba con algo como "gasté $20 en almuerzo".')) }
     finally { setCargando(false) }
   }
 
@@ -135,7 +135,7 @@ export default function AsistenteScreen() {
       setExito(true)
       setTimeout(resetear, 1600)
     } catch (e) {
-      setError(getApiErrorMessage(e, 'No se pudo guardar.'))
+      setError(getApiErrorMessage(e, 'No pudimos guardar. Intenta de nuevo.'))
     } finally {
       setGuardando(false)
     }
@@ -154,7 +154,7 @@ export default function AsistenteScreen() {
 
   return (
     <ScrollView style={s.root} contentContainerStyle={[s.content, { paddingTop: topPad }]} keyboardShouldPersistTaps="handled">
-      <ScreenHeader title="✨ Aura AI" subtitle="Habla o escribe lo que pasó" accent />
+      <ScreenHeader title="✨ Dile a Aura" subtitle="Habla o escribe lo que pasó" accent />
 
       {!parsed ? (
         <>

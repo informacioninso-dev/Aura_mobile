@@ -30,7 +30,7 @@ export default function PerfilScreen({ navigation }) {
       setSeccion(null)
       // El servidor cierra todas las sesiones al cambiar la contraseña.
       Alert.alert('Contraseña actualizada', 'Vuelve a iniciar sesión con tu nueva contraseña.', [{ text: 'OK', onPress: logout }])
-    } catch (e) { setMsg(getApiErrorMessage(e, 'Error al cambiar contraseña.')) }
+    } catch (e) { setMsg(getApiErrorMessage(e, 'No pudimos cambiar la contraseña. Intenta de nuevo.')) }
     finally { setLoading(false) }
   }
 
@@ -52,11 +52,11 @@ export default function PerfilScreen({ navigation }) {
       await api.post('/usuarios/cuenta/eliminar/', { password: deletePass })
       setDeletePass('')
       Alert.alert('Cuenta eliminada', 'Tus datos fueron eliminados. Gracias por usar Aura.', [{ text: 'OK', onPress: logout }])
-    } catch (e) { setDeleteMsg(getApiErrorMessage(e, 'No se pudo eliminar la cuenta.')) }
+    } catch (e) { setDeleteMsg(getApiErrorMessage(e, 'No pudimos eliminar la cuenta. Intenta de nuevo.')) }
     finally { setLoading(false) }
   }
 
-  const plan = user?.plan?.name || 'Gratuito'
+  const plan = user?.plan?.name || 'Gratis'
   const planColor = plan.toLowerCase().includes('pro') ? colors.primary : colors.textMuted
   const topPad = useTopInset()
 

@@ -202,7 +202,7 @@ export default function DashboardScreen({ navigation }) {
       await fetchMe()
     } catch (err) {
       setProjectionMode(previo)
-      setError(getApiErrorMessage(err, 'No se pudo cambiar el modo de proyeccion.'))
+      setError(getApiErrorMessage(err, 'No pudimos cambiar el modo. Intenta de nuevo.'))
     } finally {
       setModeSaving(false)
     }
@@ -218,7 +218,7 @@ export default function DashboardScreen({ navigation }) {
         loadReport(selectedMonth, { silent: true }),
       ])
     } catch (err) {
-      setError(getApiErrorMessage(err, 'No se pudo recalcular tu saldo.'))
+      setError(getApiErrorMessage(err, 'No pudimos recalcular tu saldo. Intenta de nuevo.'))
     } finally {
       setRecalculando(false)
     }
@@ -251,7 +251,7 @@ export default function DashboardScreen({ navigation }) {
     } catch (err) {
       setMovements(EMPTY_MOVEMENTS)
       setProjection(null)
-      setError(getApiErrorMessage(err, 'No se pudo cargar el dashboard.'))
+      setError(getApiErrorMessage(err, 'No pudimos cargar tu resumen. Intenta de nuevo.'))
     } finally {
       setLoading(false)
     }
@@ -276,7 +276,7 @@ export default function DashboardScreen({ navigation }) {
       setReport(null)
       setReportMonthKey('')
       if (!silent) {
-        setError(getApiErrorMessage(err, 'No se pudo cargar el resumen del mes.'))
+        setError(getApiErrorMessage(err, 'No pudimos cargar el resumen del mes. Intenta de nuevo.'))
       }
     } finally {
       if (requestId === reportRequestRef.current) {
@@ -307,7 +307,7 @@ export default function DashboardScreen({ navigation }) {
         descripcion: 'Ahorros iniciales',
         monto,
         fecha,
-        notas: 'Saldo con el que empiezo a usar Aura',
+        notas: 'Saldo con el que empiezas en Aura',
         incluir_en_proyeccion: true,
       })
       setAhorroInicial('')
@@ -316,7 +316,7 @@ export default function DashboardScreen({ navigation }) {
         loadReport(selectedMonth, { silent: true }),
       ])
     } catch (err) {
-      setError(getApiErrorMessage(err, 'No se pudo guardar tu ahorro inicial.'))
+      setError(getApiErrorMessage(err, 'No pudimos guardar tu ahorro inicial. Intenta de nuevo.'))
     } finally {
       setSavingAhorro(false)
     }
@@ -435,7 +435,7 @@ export default function DashboardScreen({ navigation }) {
       ...fixedIncomesThisMonth.map((item) => ({
         id: `income-fixed-${item.id}`,
         label: item.descripcion,
-        meta: `${getFrequencyLabel(item.frecuencia)} · impacto mensual`,
+        meta: `${getFrequencyLabel(item.frecuencia)} · al mes`,
         amount: montoEfectivoMes(item.monto, item.frecuencia, item.fecha_inicio, selectedMonth.getFullYear(), selectedMonth.getMonth() + 1),
       })),
       ...punctualIncomesThisMonth.map((item) => ({
@@ -510,7 +510,7 @@ export default function DashboardScreen({ navigation }) {
     { id: 'income-fixed', label: 'Ingresos fijos', value: Number(reportSummary?.ingresos_fijos ?? fixedIncomeTotal), color: colors.success },
     { id: 'income-punctual', label: 'Ingresos puntuales', value: Number(reportSummary?.ingresos_puntuales ?? punctualIncomeTotal), color: '#34D399' },
     { id: 'expense-fixed', label: 'Gastos fijos', value: Number(reportSummary?.gastos_corrientes ?? fixedExpenseTotal), color: colors.danger },
-    { id: 'expense-installments', label: 'Cuotas / diferidos', value: Number(reportSummary?.cuotas ?? installmentTotal), color: '#FB923C' },
+    { id: 'expense-installments', label: 'Cuotas activas', value: Number(reportSummary?.cuotas ?? installmentTotal), color: '#FB923C' },
     { id: 'expense-punctual', label: 'Gastos puntuales', value: Number(reportSummary?.gastos_puntuales ?? punctualExpenseTotal), color: '#FCA5A5' },
   ]
 
@@ -563,7 +563,7 @@ export default function DashboardScreen({ navigation }) {
     return (
       <View style={s.loaderScreen}>
         <ActivityIndicator color={colors.primary} size="large" />
-        <Text style={s.loaderText}>Cargando tu dashboard...</Text>
+        <Text style={s.loaderText}>Cargando tu resumen...</Text>
       </View>
     )
   }
@@ -586,7 +586,7 @@ export default function DashboardScreen({ navigation }) {
             {getGreeting()}
             {user?.username ? `, ${user.username}` : ''}
           </Text>
-          <Text style={s.subtitle}>Tu mes, claro y sin vueltas.</Text>
+          <Text style={s.subtitle}>Tu mes, claro y sin rodeos.</Text>
           <SaludFinancieraCard variant="chip" navigation={navigation} />
         </View>
         <NotificationBell />
@@ -630,7 +630,7 @@ export default function DashboardScreen({ navigation }) {
 
       {error ? (
         <View style={s.errorCard}>
-          <Text style={s.errorTitle}>No pudimos cargar todo el dashboard</Text>
+          <Text style={s.errorTitle}>No pudimos cargar todo tu resumen</Text>
           <Text style={s.errorBody}>{error}</Text>
         </View>
       ) : null}
@@ -639,7 +639,7 @@ export default function DashboardScreen({ navigation }) {
         <View style={s.emptyCard}>
           <Text style={s.emptyTitle}>Empieza en 10 segundos</Text>
           <Text style={s.emptyText}>
-            Carga un ingreso, un gasto o importa tu historial. Con eso Aura ya te empieza a mostrar tu panorama.
+            Registra un ingreso, un gasto o importa tu historial. Con eso Aura ya empieza a ayudarte.
           </Text>
 
           <View style={s.ahorroBlock}>
@@ -667,7 +667,7 @@ export default function DashboardScreen({ navigation }) {
             </View>
             <Text style={s.ahorroHint}>
               Suma todo lo que tengas ahorrado hoy. Es el punto de partida para que tu
-              proyeccion y tu colchon arranquen bien.
+              proyección y tu colchón arranquen bien.
             </Text>
           </View>
         </View>
@@ -827,7 +827,7 @@ export default function DashboardScreen({ navigation }) {
       {activeReport?.top_gastos?.length > 0 && (
         <View style={s.section}>
           <View style={s.sectionHeader}>
-            <Text style={s.sectionTitle}>Top gastos puntuales</Text>
+            <Text style={s.sectionTitle}>Gastos puntuales más altos</Text>
             <Text style={s.sectionHint}>{selectedMonthLabel}</Text>
           </View>
           {activeReport.top_gastos.slice(0, 5).map((item, index) => (
@@ -907,16 +907,16 @@ export default function DashboardScreen({ navigation }) {
             <View style={s.projTile}>
               <Text style={s.projTileLabel}>Gastos variables / mes</Text>
               <Text style={[s.projTileVal, { color: colors.danger }]}>{formatMoney(Number(projection.variable_monthly_estimate ?? 0))}</Text>
-              <Text style={s.projTileHint}>{esModoSimple ? 'Con tus estimados' : 'Estimado del historial (ponderado)'}</Text>
+              <Text style={s.projTileHint}>{esModoSimple ? 'Con tus estimados' : 'Promedio de tu historial'}</Text>
             </View>
             {advancedProjectionEnabled ? (
               <View style={[s.projTile, s.projTileWide]}>
-                <Text style={s.projTileLabel}>Cálculo de variables</Text>
-                <Text style={[s.projTileVal, { color: colors.text }]}>{esModoSimple ? 'Estimado' : 'Ponderado'}</Text>
+                <Text style={s.projTileLabel}>Cómo calculamos tus variables</Text>
+                <Text style={[s.projTileVal, { color: colors.text }]}>{esModoSimple ? 'Estimado' : 'Con tu historial'}</Text>
                 <Text style={s.projTileHint}>
                   {esModoSimple
                     ? 'Usa los montos que registraste'
-                    : `${Number(projection.variable_history_observations ?? 0)} ${Number(projection.variable_history_observations ?? 0) === 1 ? 'registro' : 'registros'} · el último año pesa doble`}
+                    : `${Number(projection.variable_history_observations ?? 0)} ${Number(projection.variable_history_observations ?? 0) === 1 ? 'registro' : 'registros'} · el último año cuenta más`}
                 </Text>
               </View>
             ) : null}

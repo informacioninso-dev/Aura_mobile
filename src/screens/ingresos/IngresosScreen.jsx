@@ -73,7 +73,7 @@ export default function IngresosScreen({ route, navigation }) {
       else await api.post(endpoint, payload)
       setModal({ visible: false, item: null })
       cargar()
-    } catch { Alert.alert('Error', 'No se pudo guardar.') }
+    } catch { Alert.alert('Error', 'No pudimos guardar. Intenta de nuevo.') }
     finally { setSaving(false) }
   }
 
@@ -112,7 +112,7 @@ export default function IngresosScreen({ route, navigation }) {
           data={data}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 100 }}
-          ListEmptyComponent={<Text style={s.empty}>No hay registros aún</Text>}
+          ListEmptyComponent={<Text style={s.empty}>{tab === 'fijos' ? 'Todavía no tienes ingresos fijos' : 'Todavía no tienes ingresos puntuales'}</Text>}
           renderItem={({ item }) => (
             <SwipeableRow onEdit={() => abrirEditar(item)} onDelete={() => eliminar(item)}>
               <View style={s.card}>

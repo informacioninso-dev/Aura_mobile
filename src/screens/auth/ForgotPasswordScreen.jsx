@@ -28,7 +28,7 @@ export default function ForgotPasswordScreen({ navigation }) {
     setSuccess('')
     try {
       const response = await forgotPassword(email.trim().toLowerCase())
-      setSuccess(response?.detail || 'Si el correo esta registrado, te enviaremos instrucciones.')
+      setSuccess(response?.detail || 'Si el correo está registrado, te enviaremos instrucciones.')
     } catch (requestError) {
       setError(getApiErrorMessage(requestError, 'No pudimos procesar la solicitud.'))
     } finally {
@@ -47,11 +47,11 @@ export default function ForgotPasswordScreen({ navigation }) {
 
         <View style={s.card}>
           <Text style={s.title}>Recuperar contraseña</Text>
-          <Text style={s.subtitle}>Te enviaremos un enlace para definir una nueva clave.</Text>
+          <Text style={s.subtitle}>Te enviaremos un enlace para crear una contraseña nueva.</Text>
           {error ? <Text style={s.error}>{error}</Text> : null}
           {success ? <Text style={s.success}>{success}</Text> : null}
           <View style={s.field}>
-            <Text style={s.label}>Correo electronico</Text>
+            <Text style={s.label}>Correo electrónico</Text>
             <TextInput style={s.input} value={email} onChangeText={(value) => { setEmail(value); setError(''); setSuccess('') }} placeholder="tu@correo.com" placeholderTextColor="rgba(255,255,255,0.28)" keyboardType="email-address" autoCapitalize="none" autoComplete="email" onSubmitEditing={submit} />
           </View>
           <TouchableOpacity style={[s.primary, loading && s.disabled]} onPress={submit} disabled={loading}>
@@ -60,7 +60,7 @@ export default function ForgotPasswordScreen({ navigation }) {
         </View>
 
         <View style={s.footer}>
-          <Text style={s.footerLink} onPress={() => navigation.navigate('Login')}>Volver a iniciar sesion</Text>
+          <Text style={s.footerLink} onPress={() => navigation.navigate('Login')}>← Volver a ingresar</Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

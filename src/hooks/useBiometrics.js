@@ -36,7 +36,7 @@ export function useBiometrics() {
   async function autenticar() {
     if (!disponible || !habilitado) return true
     const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Confirmá tu identidad para entrar a Aura',
+      promptMessage: 'Confirma tu identidad para entrar a Aura',
       fallbackLabel: 'Usar contraseña',
       cancelLabel: 'Cancelar',
     })

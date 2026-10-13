@@ -38,13 +38,13 @@ export function getProjectionHelp(mode, historyMonths, observations) {
   }
 
   const base = observations > 0
-    ? `Usa ${observations} registros reales de variables en ${historyMonths} ${historyMonths === 1 ? 'mes' : 'meses'}, dentro de una ventana de hasta 18 meses. El ultimo año tiene peso doble.`
-    : 'Aun no hay montos reales de variables; mientras los registras, usa tus estimados.'
+    ? `Toma ${observations} gastos variables reales de ${historyMonths === 1 ? 'el último mes' : `los últimos ${historyMonths} meses`} (máximo 18). El último año cuenta más en el cálculo.`
+    : 'Aún no hay montos reales de variables; mientras los registras, usa tus estimados.'
 
   if (mode === 'conservadora') {
-    return `${base} Conservadora tambien distribuye entre 12 meses los gastos puntuales que marcaste para incluir.`
+    return `${base} Conservadora también distribuye entre 12 meses los gastos puntuales que marcaste para incluir.`
   }
-  return `${base} Inteligente no proyecta gastos puntuales historicos.`
+  return `${base} Inteligente no proyecta gastos puntuales históricos.`
 }
 
 function ChipRow({ label, options, value, onChange, disabled }) {
@@ -117,14 +117,14 @@ export default function ProjectionControls({
 
       {modeLocked ? (
         <Text style={s.lockedNote}>
-          Cambiar el modo de proyeccion esta disponible en el plan Pro.
+          Cambiar el modo de proyección está disponible en el plan Pro.
         </Text>
       ) : null}
 
       <View style={s.doubleRow}>
         <View style={{ flex: 1 }}>
           <ChipRow
-            label="Historia"
+            label="Meses atrás"
             options={HISTORY_OPTIONS}
             value={pastMonths}
             onChange={onPastMonthsChange}
@@ -132,13 +132,13 @@ export default function ProjectionControls({
         </View>
       </View>
       <ChipRow
-        label="Horizonte"
+        label="Meses adelante"
         options={horizonOptions}
         value={futureMonths}
         onChange={onFutureMonthsChange}
       />
       <ChipRow
-        label="Curvas"
+        label="Qué mostrar"
         options={SERIES_OPTIONS}
         value={seriesFocus}
         onChange={onSeriesFocusChange}

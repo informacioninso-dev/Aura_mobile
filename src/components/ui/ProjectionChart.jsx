@@ -101,7 +101,7 @@ export default function ProjectionChart({
   if (!data?.series?.length) {
     return (
       <View style={s.empty}>
-        <Text style={s.emptyText}>Aun no hay suficiente informacion para mostrar la proyeccion.</Text>
+        <Text style={s.emptyText}>Todavía faltan datos para mostrar la proyección.</Text>
       </View>
     )
   }
@@ -216,7 +216,7 @@ export default function ProjectionChart({
     >
       {showHeader ? (
         <View style={s.header}>
-          <Text style={s.title}>Proyeccion mensual</Text>
+          <Text style={s.title}>Proyección mensual</Text>
         </View>
       ) : null}
 
@@ -338,7 +338,7 @@ export default function ProjectionChart({
             <Text style={s.legendText}>Gastos</Text>
           </View>
         ) : null}
-        <Text style={s.legendHint}>Linea solida: real · punteada: proyectado</Text>
+        <Text style={s.legendHint}>Línea sólida: real · punteada: proyectado</Text>
       </View>
 
       {hayVentana ? (

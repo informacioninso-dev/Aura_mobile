@@ -48,7 +48,7 @@ export default function DeferidosScreen() {
       else await api.post('/finanzas/diferidos/', payload)
       setModal({ visible: false, item: null })
       cargar()
-    } catch { Alert.alert('Error', 'No se pudo guardar.') }
+    } catch { Alert.alert('Error', 'No pudimos guardar. Intenta de nuevo.') }
     finally { setSaving(false) }
   }
 
@@ -76,7 +76,7 @@ export default function DeferidosScreen() {
       setPago({ visible: false, item: null, monto: '' })
       cargar()
     } catch (e) {
-      Alert.alert('Error', e?.response?.data?.error || 'No se pudo registrar el pago.')
+      Alert.alert('Error', e?.response?.data?.error || 'No pudimos registrar el pago. Intenta de nuevo.')
     } finally {
       setPagando(false)
     }
@@ -96,7 +96,7 @@ export default function DeferidosScreen() {
           data={items}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 100 }}
-          ListEmptyComponent={<Text style={s.empty}>No hay diferidos registrados</Text>}
+          ListEmptyComponent={<Text style={s.empty}>Todavía no tienes compras a cuotas</Text>}
           renderItem={({ item }) => (
             <SwipeableRow onEdit={() => setModal({ visible: true, item })} onDelete={() => eliminar(item)}>
               <View style={s.card}>
@@ -130,7 +130,7 @@ export default function DeferidosScreen() {
         visible={modal.visible}
         onClose={() => setModal({ visible: false, item: null })}
         onSave={guardar}
-        title={modal.item ? 'Editar diferido' : 'Nuevo diferido'}
+        title={modal.item ? 'Editar gasto a cuotas' : 'Nuevo gasto a cuotas'}
         fields={FIELDS}
         initialValues={modal.item || modal.defaults || defaults}
         loading={saving}
@@ -143,7 +143,7 @@ export default function DeferidosScreen() {
             {pago.item ? <Text style={s.payDesc}>{pago.item.descripcion}</Text> : null}
             <View style={s.payWarn}>
               <Text style={s.payWarnText}>
-                💸 Se registra como un gasto de este mes, así que tu saldo baja ahora (sale de tu liquidez).{'\n'}
+                💸 Se registra como un gasto de este mes, así que tu saldo baja ahora.{'\n'}
                 ✅ A cambio, dejas de pagar la cuota mensual de aquí en adelante.
               </Text>
             </View>

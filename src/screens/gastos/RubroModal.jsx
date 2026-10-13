@@ -66,7 +66,7 @@ export default function RubroModal({ visible, rubro, anio, mes, onClose, onChang
       onChanged?.()
       return true
     } catch {
-      Alert.alert('Error', 'No se pudo guardar.')
+      Alert.alert('Error', 'No pudimos guardar. Intenta de nuevo.')
       return false
     } finally {
       setSaving(false)
@@ -97,7 +97,7 @@ export default function RubroModal({ visible, rubro, anio, mes, onClose, onChang
       await cargar()
       onChanged?.()
     } catch {
-      Alert.alert('Error', 'No se pudo eliminar.')
+      Alert.alert('Error', 'No pudimos eliminar. Intenta de nuevo.')
     }
   }
 

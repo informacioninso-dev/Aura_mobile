@@ -141,7 +141,7 @@ export default function SimuladorScreen() {
       {!simulado && proyeccion && (
         <View style={s.hint}>
           <Text style={s.hintText}>Ajusta los valores y toca Simular para ver la proyección</Text>
-          <Text style={s.hintSub}>Gap mensual base: {formatMoney(proyeccion.smoothed_variable_gap ?? 0)}</Text>
+          <Text style={s.hintSub}>Diferencia mensual base: {formatMoney(proyeccion.smoothed_variable_gap ?? 0)}</Text>
         </View>
       )}
     </ScrollView>

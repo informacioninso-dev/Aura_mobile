@@ -80,7 +80,7 @@ export default function ReportesScreen() {
       .then(({ data: response }) => setData(response))
       .catch((err) => {
         setData(null)
-        setError(getApiErrorMessage(err, 'No se pudo cargar el reporte.'))
+        setError(getApiErrorMessage(err, 'No pudimos cargar el reporte. Intenta de nuevo.'))
       })
       .finally(() => setLoading(false))
   }, [anio, mes])
@@ -92,7 +92,7 @@ export default function ReportesScreen() {
     setExportingCsv(true)
     try {
       const filas = [
-        ['Categoria', 'Total', 'Limite', '% del limite'],
+        ['Categoría', 'Total', 'Límite', '% del límite'],
         ...data.categorias.map((c) => [c.categoria, c.total, c.limite ?? '', c.pct_limite != null ? `${c.pct_limite}%` : '']),
         [],
         ['Resumen', ''],
@@ -113,7 +113,7 @@ export default function ReportesScreen() {
       file.write(`﻿${csv}`)
       await compartirArchivo(file, 'text/csv', 'Reporte Aura')
     } catch {
-      Alert.alert('Error', 'No se pudo generar el CSV.')
+      Alert.alert('Error', 'No pudimos generar el CSV. Intenta de nuevo.')
     } finally {
       setExportingCsv(false)
     }
@@ -129,7 +129,7 @@ export default function ReportesScreen() {
       file.write(new Uint8Array(response.data))
       await compartirArchivo(file, 'application/pdf', 'Reporte Aura')
     } catch (err) {
-      let message = 'No se pudo generar el PDF.'
+      let message = 'No pudimos generar el PDF. Intenta de nuevo.'
       const respData = err?.response?.data
       if (respData instanceof ArrayBuffer) {
         try {

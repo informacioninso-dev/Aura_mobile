@@ -33,10 +33,10 @@ export default function ResetPasswordScreen({ navigation, route }) {
 
   async function submit() {
     if (!uid.trim() || !token.trim()) {
-      return setError('Falta el codigo del enlace que te enviamos por correo.')
+      return setError('Falta el código del enlace que te enviamos por correo.')
     }
-    if (password.length < 8) return setError('La clave debe tener al menos 8 caracteres.')
-    if (password !== confirmPassword) return setError('Las claves no coinciden.')
+    if (password.length < 8) return setError('La contraseña debe tener al menos 8 caracteres.')
+    if (password !== confirmPassword) return setError('Las contraseñas no coinciden.')
 
     setLoading(true)
     setError('')
@@ -47,11 +47,11 @@ export default function ResetPasswordScreen({ navigation, route }) {
         token: token.trim(),
         newPassword: password,
       })
-      setSuccess(data?.detail || 'Listo. Inicia sesion con tu nueva clave.')
+      setSuccess(data?.detail || 'Listo, tu contraseña cambió. Ya puedes ingresar.')
       setPassword('')
       setConfirmPassword('')
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError, 'No pudimos cambiar la contraseña.'))
+      setError(getApiErrorMessage(requestError, 'No pudimos cambiar la contraseña. Intenta de nuevo.'))
     } finally {
       setLoading(false)
     }
@@ -63,15 +63,15 @@ export default function ResetPasswordScreen({ navigation, route }) {
         <View style={s.brand}>
           <View style={s.mark}><Text style={s.markText}>A</Text></View>
           <Text style={s.brandName}>AURA</Text>
-          <Text style={s.brandTag}>Define tu nueva contraseña.</Text>
+          <Text style={s.brandTag}>Crea una contraseña nueva.</Text>
         </View>
 
         <View style={s.card}>
           <Text style={s.title}>Nueva contraseña</Text>
           <Text style={s.subtitle}>
             {desdeEnlace
-              ? 'Escribe la clave con la que vas a entrar de ahora en adelante.'
-              : 'Pega el codigo que aparece en el enlace del correo y elige tu nueva clave.'}
+              ? 'Escribe la contraseña con la que vas a entrar de ahora en adelante.'
+              : 'Pega el código que aparece en el enlace del correo y elige tu nueva contraseña.'}
           </Text>
 
           {error ? <Text style={s.error}>{error}</Text> : null}
@@ -80,7 +80,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
           {!desdeEnlace && (
             <>
               <View style={s.field}>
-                <Text style={s.label}>Codigo (uid)</Text>
+                <Text style={s.label}>Código (uid)</Text>
                 <TextInput
                   style={s.input}
                   value={uid}
@@ -112,7 +112,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
               style={s.input}
               value={password}
               onChangeText={(value) => { setPassword(value); setError('') }}
-              placeholder="Minimo 8 caracteres"
+              placeholder="Mínimo 8 caracteres"
               placeholderTextColor="rgba(255,255,255,0.28)"
               secureTextEntry
               autoCapitalize="none"
@@ -135,7 +135,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
 
           {success ? (
             <TouchableOpacity style={s.primary} onPress={() => navigation.navigate('Login')}>
-              <Text style={s.primaryText}>Iniciar sesion</Text>
+              <Text style={s.primaryText}>Iniciar sesión</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={[s.primary, loading && s.disabled]} onPress={submit} disabled={loading}>
@@ -148,7 +148,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
 
         <View style={s.footer}>
           <Text style={s.footerLink} onPress={() => navigation.navigate('Login')}>
-            Volver a iniciar sesion
+            ← Volver a ingresar
           </Text>
         </View>
       </ScrollView>

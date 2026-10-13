@@ -50,7 +50,7 @@ const MAS_SECCIONES = [
     items: [
       { icon: '🛡️', label: 'Salud financiera', hint: 'Tu puntaje 0-100', screen: 'SaludFinanciera' },
       { icon: '🎯', label: 'Presupuesto', hint: 'Límites por categoría', screen: 'Presupuesto' },
-      { icon: '🧩', label: 'Gastos a cuotas', hint: 'Diferidos y pagos', screen: 'Diferidos' },
+      { icon: '🧩', label: 'Gastos a cuotas', hint: 'Compras a cuotas', screen: 'Diferidos' },
       { icon: '💳', label: 'Cuentas con personas', hint: 'Te deben / debes', screen: 'Cobros' },
     ],
   },
@@ -59,7 +59,7 @@ const MAS_SECCIONES = [
     items: [
       { icon: '🔮', label: 'Simulador', hint: '¿Qué pasa si...?', screen: 'Simulador' },
       { icon: '📥', label: 'Importar movimientos', hint: 'Desde tu banco', screen: 'Importar' },
-      { icon: '📄', label: 'Reportes', hint: 'Resúmenes y export', screen: 'Reportes' },
+      { icon: '📄', label: 'Reportes', hint: 'Resúmenes y descargas', screen: 'Reportes' },
     ],
   },
   {
@@ -159,7 +159,7 @@ function MasNavigator() {
 function AuraTabButton({ onPress, accessibilityState }) {
   const focused = accessibilityState?.selected
   return (
-    <TouchableOpacity onPress={onPress} style={fab.wrap} activeOpacity={0.85}>
+    <TouchableOpacity onPress={onPress} style={fab.wrap} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="Dile a Aura">
       <View style={[fab.btn, focused && fab.btnActive]}>
         <Text style={fab.icon}>✦</Text>
       </View>
@@ -208,7 +208,7 @@ function MainTabs() {
       <Tab.Screen name="Ingresos" component={IngresosScreen} options={{ tabBarLabel: 'Lo ganado' }} />
       <Tab.Screen name="Aura" component={AsistenteScreen}
         options={{
-          tabBarLabel: 'Aura AI',
+          tabBarLabel: 'Dile a Aura',
           tabBarButton: (props) => <AuraTabButton {...props} />,
         }}
       />

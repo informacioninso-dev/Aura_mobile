@@ -43,7 +43,7 @@ export default function CobrosScreen() {
       else await api.post('/finanzas/cuentas-por-cobrar/', payload)
       setModal({ visible: false, item: null })
       cargar()
-    } catch { Alert.alert('Error', 'No se pudo guardar.') }
+    } catch { Alert.alert('Error', 'No pudimos guardar. Intenta de nuevo.') }
     finally { setSaving(false) }
   }
 
@@ -84,7 +84,7 @@ export default function CobrosScreen() {
           data={data}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 100 }}
-          ListEmptyComponent={<Text style={s.empty}>No hay registros</Text>}
+          ListEmptyComponent={<Text style={s.empty}>{tab === 'me_deben' ? 'Todavía nadie te debe nada' : 'Todavía no le debes a nadie'}</Text>}
           renderItem={({ item }) => {
             const color = tab === 'me_deben' ? colors.success : colors.danger
             const estadoColor = ESTADO_COLOR[item.estado] || '#F59E0B'

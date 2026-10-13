@@ -100,7 +100,7 @@ export default function SaludFinancieraScreen() {
       setError('')
     } catch (err) {
       setData(null)
-      setError(getApiErrorMessage(err, 'No se pudo cargar tu salud financiera.'))
+      setError(getApiErrorMessage(err, 'No pudimos cargar tu salud financiera. Intenta de nuevo.'))
     } finally {
       setLoading(false)
     }
@@ -137,8 +137,8 @@ export default function SaludFinancieraScreen() {
           <Text style={s.lockedIcon}>🔒</Text>
           <Text style={s.lockedTitle}>Disponible en el plan Pro</Text>
           <Text style={s.lockedText}>
-            El score resume tu capacidad de pago, tu ahorro, tu fondo de emergencia y
-            que tan constante eres, en un solo numero del 0 al 100.
+            El puntaje resume tu capacidad de pago, tu ahorro, tu fondo de emergencia y
+            qué tan constante eres, en un solo número del 0 al 100.
           </Text>
         </View>
       </View>
@@ -212,7 +212,7 @@ export default function SaludFinancieraScreen() {
 
           {(data.consejos || []).length > 0 && (
             <View style={s.consejosCard}>
-              <Text style={s.consejosTitle}>Que puedes mejorar</Text>
+              <Text style={s.consejosTitle}>¿Qué puedes mejorar?</Text>
               {data.consejos.map((consejo, i) => (
                 <View key={consejo.clave || i} style={s.consejoRow}>
                   <Text style={s.consejoBullet}>•</Text>

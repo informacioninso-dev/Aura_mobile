@@ -47,7 +47,7 @@ export default function PresupuestoScreen() {
       else await api.post('/finanzas/categorias/', payload)
       setModal({ visible: false, item: null })
       cargar()
-    } catch { Alert.alert('Error', 'No se pudo guardar.') }
+    } catch { Alert.alert('Error', 'No pudimos guardar. Intenta de nuevo.') }
     finally { setSaving(false) }
   }
 

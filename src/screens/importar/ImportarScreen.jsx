@@ -67,7 +67,7 @@ export default function ImportarScreen() {
         Alert.alert('Plantilla guardada', file.uri)
       }
     } catch {
-      Alert.alert('Error', 'No se pudo generar la plantilla.')
+      Alert.alert('Error', 'No pudimos generar la plantilla. Intenta de nuevo.')
     }
   }
 
@@ -103,7 +103,7 @@ export default function ImportarScreen() {
       setSeleccion(data.filas_ok.map((_, index) => index))
       setFase('preview')
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Error al procesar el archivo'))
+      setError(getApiErrorMessage(err, 'No pudimos leer el archivo. Revisa que sea .csv o .xlsx e intenta de nuevo.'))
     } finally {
       setCargando(false)
     }
@@ -131,7 +131,7 @@ export default function ImportarScreen() {
       setResultado(data)
       setFase('confirmado')
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Error al importar'))
+      setError(getApiErrorMessage(err, 'No pudimos importar los movimientos. Intenta de nuevo.'))
     } finally {
       setCargando(false)
     }
@@ -167,7 +167,7 @@ export default function ImportarScreen() {
         Alert.alert('Respaldo guardado', uri)
       }
     } catch {
-      setRespaldoError('No se pudo exportar la cuenta.')
+      setRespaldoError('No pudimos exportar la cuenta. Intenta de nuevo.')
     } finally {
       setRespaldoCargando(false)
     }
@@ -192,7 +192,7 @@ export default function ImportarScreen() {
       })
       setRespaldoResultado(data)
     } catch (err) {
-      setRespaldoError(getApiErrorMessage(err, 'No se pudo importar el respaldo.'))
+      setRespaldoError(getApiErrorMessage(err, 'No pudimos importar el respaldo. Intenta de nuevo.'))
     } finally {
       setRespaldoCargando(false)
     }
@@ -204,7 +204,7 @@ export default function ImportarScreen() {
     return (
       <View style={[s.root, s.center]}>
         <Text style={s.successIcon}>✅</Text>
-        <Text style={s.successTitle}>Todo importado</Text>
+        <Text style={s.successTitle}>¡Listo, todo importado!</Text>
         <View style={s.statsRow}>
           <View style={s.statBox}>
             <Text style={[s.statValue, { color: colors.success }]}>{resultado.ingresos_creados}</Text>
@@ -338,8 +338,8 @@ export default function ImportarScreen() {
         <View style={s.asesorBox}>
           <Text style={s.asesorTag}>ASESOR · RESPALDO DE CUENTA COMPLETA</Text>
           <Text style={s.asesorHint}>
-            Exporta TODO (ingresos, gastos fijos/variables y sus consumos, diferidos, cuentas con personas y categorias) y
-            reimportalo en otra cuenta.
+            Exporta todo (ingresos, gastos fijos/variables y sus consumos, gastos a cuotas, cuentas con personas y categorías) y
+            vuelve a importarlo en otra cuenta.
           </Text>
 
           <TouchableOpacity style={[s.card, respaldoCargando && s.btnDisabled]} onPress={exportarCuenta} disabled={respaldoCargando}>
@@ -364,8 +364,8 @@ export default function ImportarScreen() {
           {respaldoResultado && (
             <Text style={s.asesorOk}>
               ✅ Importado: {respaldoResultado.conteo?.ingresos ?? 0} ingresos · {respaldoResultado.conteo?.gastos ?? 0} gastos ·{' '}
-              {respaldoResultado.conteo?.consumos ?? 0} consumos · {respaldoResultado.conteo?.diferidos ?? 0} diferidos ·{' '}
-              {respaldoResultado.conteo?.cuentas ?? 0} cuentas · {respaldoResultado.conteo?.categorias ?? 0} categorias
+              {respaldoResultado.conteo?.consumos ?? 0} consumos · {respaldoResultado.conteo?.diferidos ?? 0} cuotas ·{' '}
+              {respaldoResultado.conteo?.cuentas ?? 0} cuentas · {respaldoResultado.conteo?.categorias ?? 0} categorías
             </Text>
           )}
         </View>

@@ -75,7 +75,7 @@ export default function NotificationBell() {
               {loading ? (
                 <ActivityIndicator color={colors.primary} style={{ marginVertical: 24 }} />
               ) : notifs.length === 0 ? (
-                <Text style={s.empty}>Sin notificaciones 🎉</Text>
+                <Text style={s.empty}>Estás al día 🎉</Text>
               ) : (
                 notifs.map((n) => (
                   <TouchableOpacity key={n.id} style={[s.item, !n.leida && s.itemUnread]} onPress={() => leer(n)}>
