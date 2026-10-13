@@ -43,6 +43,9 @@ export default function SimuladorScreen() {
   const [ingresoExtra, setIngresoExtra] = useState('')
   const [meses, setMeses] = useState('12')
   const [simulado, setSimulado] = useState(null)
+  // Antes del return temprano: un hook despues de el cambia la cantidad de hooks
+  // entre renders y React tira la pantalla al terminar de cargar.
+  const topPad = useTopInset()
 
   useEffect(() => {
     api.get('/finanzas/proyeccion-acumulada/?months=12&past_months=1')
@@ -83,7 +86,6 @@ export default function SimuladorScreen() {
   const values = chartData.map((p) => p.balance)
   const labels = chartData.map((p) => p.mes)
   const finalPositivo = simulado ? simulado.final >= 0 : true
-  const topPad = useTopInset()
 
   return (
     <ScrollView style={s.root} contentContainerStyle={[s.content, { paddingTop: topPad }]} keyboardShouldPersistTaps="handled">

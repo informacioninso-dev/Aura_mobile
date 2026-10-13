@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react'
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import Svg, { Circle, Line, Path, Rect, Text as SvgText } from 'react-native-svg'
 
 import api from '../../api/client'

@@ -144,7 +144,7 @@ function getFrequencyLabel(value) {
 }
 
 export default function DashboardScreen({ navigation }) {
-  const { user, logout, fetchMe } = useAuth()
+  const { user, fetchMe } = useAuth()
   const currentMonth = useMemo(() => startOfMonth(new Date()), [])
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)
   const [ahorroInicial, setAhorroInicial] = useState('')
@@ -590,9 +590,6 @@ export default function DashboardScreen({ navigation }) {
           <SaludFinancieraCard variant="chip" navigation={navigation} />
         </View>
         <NotificationBell />
-        <View style={s.planBadge}>
-          <Text style={s.planText}>Plan {user?.plan?.name || 'Gratis'}</Text>
-        </View>
       </View>
 
       <View style={s.monthSwitcher}>
@@ -979,10 +976,6 @@ export default function DashboardScreen({ navigation }) {
           />
         </View>
       </Modal>
-
-      <TouchableOpacity style={s.logoutBtn} onPress={logout}>
-        <Text style={s.logoutText}>Cerrar sesión</Text>
-      </TouchableOpacity>
     </ScrollView>
   )
 }
@@ -1019,8 +1012,8 @@ function DetailCard({ title, total, items, emptyLabel, accent, showAll }) {
                 <Text style={s.detailLabel}>{item.label}</Text>
                 <Text style={s.detailMeta}>{item.meta}</Text>
                 {item.progress != null && (
-                  <View style={s.progressTrack}>
-                    <View style={[s.progressFill, { width: `${item.progress}%` }]} />
+                  <View style={s.cuotaTrack}>
+                    <View style={[s.cuotaFill, { width: `${item.progress}%` }]} />
                   </View>
                 )}
               </View>
@@ -1050,15 +1043,6 @@ const s = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   greeting: { color: colors.text, fontSize: 24, fontWeight: '800' },
   subtitle: { color: 'rgba(255,255,255,0.45)', fontSize: 13, marginTop: 4 },
-  planBadge: {
-    backgroundColor: 'rgba(196,135,246,0.12)',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderWidth: 1,
-    borderColor: 'rgba(196,135,246,0.25)',
-  },
-  planText: { color: colors.primary, fontWeight: '700', fontSize: 12 },
   monthSwitcher: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1246,8 +1230,8 @@ const s = StyleSheet.create({
   detailRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 10 },
   detailLabel: { color: colors.text, fontSize: 13, fontWeight: '600' },
   detailMeta: { color: 'rgba(255,255,255,0.38)', fontSize: 11, marginTop: 2 },
-  progressTrack: { marginTop: 6, height: 5, maxWidth: 190, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.10)', overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 999, backgroundColor: colors.primary },
+  cuotaTrack: { marginTop: 6, height: 5, maxWidth: 190, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.10)', overflow: 'hidden' },
+  cuotaFill: { height: '100%', borderRadius: 999, backgroundColor: colors.primary },
   detailAmount: { fontSize: 13, fontWeight: '700' },
   moreText: { color: colors.textFaint, fontSize: 12, marginTop: 2 },
   emptyListText: { color: colors.textMuted, fontSize: 13, lineHeight: 18 },
@@ -1270,14 +1254,4 @@ const s = StyleSheet.create({
   topExpenseLabel: { color: colors.text, fontWeight: '600', fontSize: 13 },
   topExpenseMeta: { color: 'rgba(255,255,255,0.38)', fontSize: 11, marginTop: 2 },
   topExpenseAmount: { color: colors.danger, fontWeight: '700', fontSize: 13 },
-  logoutBtn: {
-    marginTop: 4,
-    backgroundColor: 'rgba(248,113,113,0.10)',
-    borderWidth: 1,
-    borderColor: 'rgba(248,113,113,0.22)',
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  logoutText: { color: colors.danger, fontWeight: '700', fontSize: 14 },
 })

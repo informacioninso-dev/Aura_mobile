@@ -99,7 +99,7 @@ export default function RegistroScreen({ navigation }) {
             <TextInput style={s.input} value={form.username} onChangeText={(username) => update({ username })} placeholder="¿Cómo quieres que te llamemos?" placeholderTextColor="rgba(255,255,255,0.28)" autoCapitalize="words" />
           </View>
           <View style={s.field}>
-            <Text style={s.label}>Clave</Text>
+            <Text style={s.label}>Contraseña</Text>
             <TextInput style={s.input} value={form.password} onChangeText={(password) => update({ password })} placeholder="Mínimo 8 caracteres" placeholderTextColor="rgba(255,255,255,0.28)" secureTextEntry autoComplete="new-password" />
           </View>
           <View style={s.field}>
