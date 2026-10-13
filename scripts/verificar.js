@@ -8,6 +8,11 @@
 const fs = require('fs')
 const path = require('path')
 const babel = require('@babel/core')
+// El preset puede quedar dentro de expo/node_modules (no hoisteado) según cómo
+// npm resuelva las dependencias; se busca desde expo, igual que hace Metro.
+const PRESET = require.resolve('babel-preset-expo', {
+  paths: [path.dirname(require.resolve('expo/package.json')), __dirname],
+})
 
 const GLOBALS = new Set((
   'console Math Number String Date Promise JSON Array Object Boolean parseFloat parseInt '
@@ -34,7 +39,7 @@ for (const f of lista) {
   let ast
   try {
     ast = babel.parseSync(fs.readFileSync(f, 'utf8'), {
-      filename: f, presets: ['babel-preset-expo'], babelrc: false, configFile: false,
+      filename: f, presets: [PRESET], babelrc: false, configFile: false,
     })
   } catch (e) {
     problemas.push(`${rel}: sintaxis → ${e.message.split('\n')[0]}`)

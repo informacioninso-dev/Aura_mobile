@@ -18,6 +18,7 @@ Expo y React Native cambian **mucho** entre versiones; romper la matriz de compa
 ## 3. Correr / validar
 - `npx expo start` (Metro en **8081**). Expo Go: escanear QR o `exp://<IP-LAN>:8081`. Reload: agitar el teléfono.
 - **Antes de cada commit: `npm run verificar`** (`scripts/verificar.js`): sintaxis + identificadores sin importar + hooks después de un `return` temprano. Babel solo NO alcanza: esos dos errores pasaban la sintaxis y tiraban la app en runtime.
+- **Antes de un build EAS: `npx expo-doctor@latest` (18/18) y `npx expo install --check`.** Expo Go trae sus propios módulos nativos y tapa errores que en el APK tiran la app (ej.: `@expo/vector-icons` necesita `expo-font` instalado directo).
 - Para validar imports/paquetes/assets de verdad: `npx expo export --platform android --output-dir <tmp>` (arma el bundle completo sin dispositivo).
 - Como pega a PROD, se loguea con **cuenta real** de aura.binnso.com (las de prueba local no sirven acá).
 
@@ -42,6 +43,7 @@ Expo y React Native cambian **mucho** entre versiones; romper la matriz de compa
 - **Copy (Ecuador)**: mismas reglas que la web — tuteo (nunca voseo), "registrar" (no "cargar"), "contraseña" (no "clave"), plan "Gratis" (no "Free"), errores "No pudimos … Intenta de nuevo.", sin "correctamente", "gastos a cuotas" (no "diferidos") en textos visibles. El asistente se llama **"Dile a Aura"**. Al cambiar un texto en la web, replicarlo aquí (y viceversa).
 
 ## 7. Novedades (changelog — agregar arriba)
+- **2026-10-13** — Dependencias alineadas a SDK 54 (`expo install --fix`; antes notifications/splash/local-auth eran de un SDK viejo), + `expo-font`, − `expo-modules-core`, dedupe de `expo-constants`: expo-doctor 18/18. Plan **Gratis: 1 mes proyectado** (lo impone el backend; el móvil muestra `months` de la respuesta). Perfil muestra la versión de `app.json`.
 - **2026-10-13** — Entregas 2 y 3 de la auditoría: auth unificado con el logo real, pestañas Ionicons, Dashboard nuevo (héroe, cuenta nueva, caché), Proyección interactiva + simulador en vivo con "Agregar a mis gastos". **Prioridad del usuario: paridad FUNCIONAL total con la web** (mucha gente solo usará el móvil).
 - **2026-10-13** — Auditoría UX "Primer minuto en Aura" (https://claude.ai/artifact/MuYCK3WfygDfvANwDgnjSD), aprobada por el usuario. Entrega 1: fix de 2 caídas (ProjectionChart sin importar `TouchableOpacity` → crash en Pro al pasar de 12 meses; Simulador con hook después de return). Ícono, ícono adaptativo y splash con el logo real (sobre blanco: la barra azul marino del logo no se ve sobre el fondo oscuro). Fuera del Dashboard: "Cerrar sesión" (sin confirmar) y la insignia de plan. `npm run verificar`.
 - **2026-10-13** — Copy alineado con la web: ortografía, asistente "Dile a Aura" (+ accessibilityLabel en el botón central), estados vacíos por pestaña, textos de proyección sin jerga ("Meses atrás/adelante", "Con tu historial"). Pendiente: `Aura v1.0` hardcodeado en Perfil (la app es 1.4.0).

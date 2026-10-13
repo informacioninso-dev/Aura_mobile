@@ -193,8 +193,10 @@ export default function DashboardScreen({ navigation }) {
   // El Dashboard pide la proyeccion con el horizonte por defecto del plan; los
   // ajustes finos viven en la pantalla Proyeccion.
   const projectionDisplayMonths = Math.max(2, Number(user?.feature_access?.projection_months || 6))
-  const freeFutureMonths = Math.max(1, Math.floor(projectionDisplayMonths / 2))
-  const freePastMonths = Math.max(1, projectionDisplayMonths - freeFutureMonths)
+  // Igual que el backend: Gratis ve 1 solo mes proyectado (el servidor lo impone
+  // de todas formas); el historial real es la mitad del valor del plan.
+  const freeFutureMonths = 1
+  const freePastMonths = Math.max(1, projectionDisplayMonths - Math.floor(projectionDisplayMonths / 2))
   const advancedProjectionEnabled = Boolean(user?.feature_access?.advanced_projection_enabled)
   const advancedProjectionMaxMonths = Math.max(1, Number(user?.feature_access?.advanced_projection_months || 120))
   const futureMonths = advancedProjectionEnabled ? Math.min(12, advancedProjectionMaxMonths) : freeFutureMonths

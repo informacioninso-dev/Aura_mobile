@@ -61,7 +61,8 @@ export default function ProyeccionScreen({ navigation, route }) {
   const freeMeses = Math.max(2, Number(user?.feature_access?.projection_months || 6))
   const horizontes = pro ? HORIZONTES.filter((h) => h.value <= maxMeses) : []
 
-  const [futuro, setFuturo] = useState(pro ? Math.min(12, maxMeses) : Math.max(1, Math.floor(freeMeses / 2)))
+  // Gratis: 1 mes proyectado (lo impone el backend; se muestra lo que responde).
+  const [futuro, setFuturo] = useState(pro ? Math.min(12, maxMeses) : 1)
   const [pasado, setPasado] = useState(pro ? 6 : Math.max(1, freeMeses - Math.floor(freeMeses / 2)))
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -281,7 +282,12 @@ export default function ProyeccionScreen({ navigation, route }) {
             ))}
           </ScrollView>
         ) : (
-          <Text style={s.lockedNote}>Ves {futuro} {futuro === 1 ? 'mes' : 'meses'} hacia adelante. Con el plan Pro, hasta 40 años.</Text>
+          <Text style={s.lockedNote}>
+            {(() => {
+              const m = Number(data?.months ?? futuro)
+              return `Con el plan Gratis ves ${m === 1 ? 'el próximo mes' : `${m} meses hacia adelante`}. Con Pro, hasta 40 años.`
+            })()}
+          </Text>
         )}
 
         <View style={s.card}>

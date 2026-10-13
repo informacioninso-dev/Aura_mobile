@@ -7,6 +7,10 @@ import { useBiometrics } from '../../hooks/useBiometrics'
 import { useTopInset } from '../../hooks/useTopInset'
 import ScreenHeader from '../../components/ui/ScreenHeader'
 import { colors } from '../../theme/theme'
+import appConfig from '../../../app.json'
+
+// La versión sale de app.json: antes decía "v1.0" a mano mientras la app iba en 1.4.0.
+const APP_VERSION = appConfig.expo.version
 
 export default function PerfilScreen({ navigation }) {
   const { user, logout } = useAuth()
@@ -129,7 +133,7 @@ export default function PerfilScreen({ navigation }) {
         <Text style={s.logoutText}>Cerrar sesión</Text>
       </TouchableOpacity>
 
-      <Text style={s.version}>Aura v1.0 · aura.binnso.com</Text>
+      <Text style={s.version}>Aura v{APP_VERSION} · aura.binnso.com</Text>
     </ScrollView>
   )
 }
